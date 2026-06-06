@@ -4,7 +4,7 @@
 	"defs": {
 		"main": {
 			"type": "record",
-			"description": "A single play-through for a roguelike or similarly run-based game. Is updated as the run progresses. The rkey must be consistent through the run (eg. derived deterministically from the start time and the game seed) so that updates target the same record, and multiplayer participants writing to their own PDSs converge on the same rkey.",
+			"description": "A single play-through of a game, updated as it progresses. The rkey should be consistent between saves (eg. for rogue-likes, derived deterministically from the start time and the game seed, or a lineage-based save ID) so that updates target the same record, and multiplayer participants writing to their own PDSs converge on the same rkey.",
 			"key": "tid",
 			"record": {
 				"type": "object",
@@ -34,22 +34,19 @@
 							"ref": "#participant"
 						}
 					},
-					"seed": {
-						"type": "string",
-						"description": "The run's seed, when the game uses seeded play. Serialised as a string to preserve precision for ulong/large-integer seeds."
-					},
 					"settings": {
 						"type": "ref",
 						"ref": "#settings",
 						"description": "Game-specific run settings (for this player, or global) set before the run begins (e.g. StS2's ascension and chosen character)."
 					},
 					"progress": {
-						"type": "unknown",
-						"description": "Game-specific progress indicators, at the `updatedAt` moment in time, that change through the run (e.g. health, gold, kills). Open-ended object keyed and valued at the game's discretion."
+						"type": "ref",
+						"description": "Game-specific progress indicators, accurate at the `updatedAt` timestamp, and updated as the play-through progresses (e.g. health, gold, kills, score).",
+						"ref": "#progress"
 					},
 					"acquisitions": {
 						"type": "array",
-						"description": "Items the player has acquired during the run, in pickup order. May be a 'meta' unlockable, or an in-run item.",
+						"description": "Notable items the player has acquired during the run, in pickup order. May be a 'meta' unlockable, or an in-run item.",
 						"items": {
 							"type": "union",
 							"refs": [
@@ -77,19 +74,6 @@
 						"type": "integer",
 						"minimum": 0,
 						"description": "Seconds the player spent actively playing this run. May be shorter than `endedAt - startedAt` if the game was paused or save-and-quitted between sessions."
-					},
-					"route": {
-						"type": "array",
-						"description": "The route through the game the run has gone through, so far.",
-						"items": {
-							"type": "string",
-							"description": "A game-specific serialisation of a stop on the route."
-						}
-					},
-					"outcome": {
-						"type": "ref",
-						"description": "How the run ended. Unset while the run is still in progress.",
-						"ref": "#outcome"
 					},
 					"versions": {
 						"type": "ref",
@@ -156,6 +140,10 @@
 					"type": "string",
 					"description": "For games with different modes of play eg. a daily challenge, the stable name of the mode of play."
 				},
+				"seed": {
+					"type": "string",
+					"description": "The play-through's seed, if its using seeded play. Serialised as a string to preserve precision for ulong/large-integer seeds."
+				},
 				"character": {
 					"type": "string",
 					"description": "For games where a character is choosable, the stable identifier of who the player chose for this run."
@@ -173,6 +161,25 @@
 						"refs": [
 							"#gameItem"
 						]
+					}
+				}
+			}
+		},
+		"progress": {
+			"type": "object",
+			"description": "Open-ended, game-specific progress indicators (e.g. health, gold, kills, score) with a few universal properties that should be used if appropriate.",
+			"properties": {
+				"outcome": {
+					"type": "ref",
+					"description": "How a playthrough ended. Unset while the game is still in progress.",
+					"ref": "#outcome"
+				},
+				"route": {
+					"type": "array",
+					"description": "For games where the route taken involves choices, the stops chosen as the player goes through them so far.",
+					"items": {
+						"type": "string",
+						"description": "A game-specific serialisation of a stop on the route."
 					}
 				}
 			}
