@@ -36,12 +36,13 @@ See the [.actor.run lexicon here](./lexicons/games/gamesgamesgamesgames/actor/ru
   // Atproto ID can be looked up with dev.keytrace.reverseLookup
   // Because rkey is the same across participants, lookup of other players' records is trivial
   "playingWith": [
-    { "atproto": "did:plc:sy4qmi35imvto5yjhuwdeozk", "steam": "76561198009200312"}
+    { "atproto": "did:plc:sy4qmi35imvto5yjhuwdeozk", "steam": "76561198009200312"},
+    { "atproto": "did:plc:re253gupqudlfcugvxhdlr7v", "steam": "76561199436603652"}
   ],
   // The seed of the run, if using seeded play
   "seed": "AXK36RTM4T",
   // Attributes that are configured before the run begins
-  "loadout":{
+  "settings":{
     // sts2
     "character": "silent",
     // Representing Ascension level 1
@@ -59,7 +60,7 @@ See the [.actor.run lexicon here](./lexicons/games/gamesgamesgamesgames/actor/ru
   // Things you've acquired inside the run.
   "acquisitions": [
     // You can use the generic type, which just requires an id, and has an optional name & useCount
-    { "$type": "games.gamesgamesgamesgames.game#gameItem",
+    { "$type": "games.gamesgamesgamesgames.actor.run#gameItem",
       "id": "silent.strike+/corrupted",
       "kind": "card",
       "name": "Strike (Upgraded, Corrupted)",
@@ -70,10 +71,10 @@ See the [.actor.run lexicon here](./lexicons/games/gamesgamesgamesgames/actor/ru
           "name": "strike",
           "upgraded": true,
           "enchantment": "corrupted" }]},
-    { "$type": "games.gamesgamesgamesgames.game#gameItem",
+    { "$type": "games.gamesgamesgamesgames.actor.run#gameItem",
       "kind": "relic",
       "id": "cracked_core",
-      "name": "Cracked Core" },
+      "name": "Cracked Core" }
   ],
   // Should always be present, and consistent (used to generate consistent rkey)
   "startedAt": "2026-04-18T13:30:44.221Z",
@@ -91,7 +92,7 @@ See the [.actor.run lexicon here](./lexicons/games/gamesgamesgamesgames/actor/ru
     // An id for the reason behind the outomce, eg. the win scenario, or boss that killed you
     "cause": "bygone-effigy"
   },
-  "versions" {
+  "versions": {
     "game": "0.107.0",
     "additional": [
       {"name": "sts2-atproto", "version": "0.16.1"},
