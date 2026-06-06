@@ -34,13 +34,55 @@
   },
   "progress": {
     "route": [
-      "titanic_plains",
-      "abandoned_aqueduct",
-      "rallypoint_delta",
-      "scorched_acres",
-      "bazaar_between_time",
-      "sky_meadow",
-      "commencement"
+      {
+        "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
+        "id": "titanic_plains",
+        "name": "Titanic Plains",
+        "startedAt": "2026-06-05T19:02:40.000Z",
+        "endedAt": "2026-06-05T19:08:50.000Z"
+      },
+      {
+        "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
+        "id": "abandoned_aqueduct",
+        "name": "Abandoned Aqueduct",
+        "startedAt": "2026-06-05T19:08:50.000Z",
+        "endedAt": "2026-06-05T19:15:30.000Z"
+      },
+      {
+        "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
+        "id": "rallypoint_delta",
+        "name": "Rallypoint Delta",
+        "startedAt": "2026-06-05T19:15:30.000Z",
+        "endedAt": "2026-06-05T19:22:10.000Z"
+      },
+      {
+        "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
+        "id": "scorched_acres",
+        "name": "Scorched Acres",
+        "startedAt": "2026-06-05T19:22:10.000Z",
+        "endedAt": "2026-06-05T19:29:40.000Z"
+      },
+      {
+        "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
+        "id": "bazaar_between_time",
+        "name": "Bazaar Between Time",
+        "startedAt": "2026-06-05T19:29:40.000Z",
+        "endedAt": "2026-06-05T19:32:05.000Z"
+      },
+      {
+        "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
+        "id": "sky_meadow",
+        "name": "Sky Meadow",
+        "startedAt": "2026-06-05T19:32:05.000Z",
+        "endedAt": "2026-06-05T19:40:20.000Z"
+      },
+      {
+        "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
+        "id": "commencement",
+        "name": "Commencement",
+        "startedAt": "2026-06-05T19:40:20.000Z",
+        "endedAt": "2026-06-05T19:48:10.000Z"
+      }
     ],
     "outcome": {
       "type": "succeeded",

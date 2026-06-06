@@ -51,8 +51,22 @@ See the [.actor.play lexicon here](./lexicons/games/gamesgamesgamesgames/actor/p
   },
   // Open ended object for single values which accumulate or alter through the game as a measure of how well you're doing
   "progress": {
-    // The stops along the route so far, using consistent IDs if possible
-    "route": ["monster:nibbit", "monster:twig-slimes", "marketplace", "boss:bygone-effigy"],
+    // The stops along the route so far, each a #routeStop (game-specific id, optional name & timing)
+    "route": [
+      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
+        "id": "monster:nibbit", "name": "Nibbit",
+        "startedAt": "2026-04-18T13:30:50.221Z", "endedAt": "2026-04-18T13:41:20.221Z" },
+      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
+        "id": "monster:twig-slimes", "name": "Twig Slimes",
+        "startedAt": "2026-04-18T13:41:20.221Z", "endedAt": "2026-04-18T13:53:10.221Z" },
+      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
+        "id": "marketplace", "name": "Marketplace",
+        "startedAt": "2026-04-18T13:53:10.221Z", "endedAt": "2026-04-18T13:58:40.221Z" },
+      // endedAt is set here because the run ended at this stop; leave it unset while a stop is still current
+      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
+        "id": "boss:bygone-effigy", "name": "Bygone Effigy",
+        "startedAt": "2026-04-18T14:05:30.221Z", "endedAt": "2026-04-18T14:18:01.221Z" }
+    ],
     // What happened at the end of the game
     // Should be unset for in-progress runs
     "outcome": {

@@ -122,7 +122,7 @@
 					"items": {
 						"type": "union",
 						"description": "Game-specific lexicons that can hold additional information about this item.",
-						"closed": false
+						"refs": []
 					}
 				}
 			}
@@ -186,10 +186,48 @@
 				},
 				"route": {
 					"type": "array",
-					"description": "For games where the route taken involves choices, the stops chosen as the player goes through them so far.",
+					"description": "For games where the route taken involves choices, the stops the player has gone through so far, in order.",
 					"items": {
-						"type": "string",
-						"description": "A game-specific serialisation of a stop on the route."
+						"type": "union",
+						"refs": [
+							"#routeStop"
+						],
+						"closed": false
+					}
+				}
+			}
+		},
+		"routeStop": {
+			"type": "object",
+			"description": "A single stop along the route through a play-through (e.g. a map node, level, region, or encounter). Can be extended with game-specific lexicons.",
+			"required": [
+				"id"
+			],
+			"properties": {
+				"id": {
+					"type": "string",
+					"description": "Stable, game-defined identifier for this stop. Language-independent and should be consistent across play-throughs & game versions if possible."
+				},
+				"name": {
+					"type": "string",
+					"description": "Human-readable display name, in the locale active at write time. Optional, but recommended so renderers without a localised mapping of `id` can fall back to displaying this."
+				},
+				"startedAt": {
+					"type": "string",
+					"format": "datetime",
+					"description": "Wall-clock time the player arrived at this stop."
+				},
+				"endedAt": {
+					"type": "string",
+					"format": "datetime",
+					"description": "Wall-clock time the player left this stop. Unset while this is the current stop."
+				},
+				"extra": {
+					"type": "array",
+					"items": {
+						"type": "union",
+						"description": "Game-specific lexicons that can hold additional information about this stop.",
+						"refs": []
 					}
 				}
 			}
