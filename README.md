@@ -27,7 +27,7 @@ This package's code has a helper for generatring a suitable `rkey` from the star
 
 See the [.actor.run lexicon here](./lexicons/games/gamesgamesgamesgames/actor/run.json), an example for [Slay the Spire 2](https://cartridge.dev/game/slay-the-spire-ii) is below:
 
-```json
+```jsonc
 {
   "$type": "games.gamesgamesgamesgames.actor.run",
   "game": "at://did:web:gamesgamesgamesgames.games/games.gamesgamesgamesgames.game/3mglj4k2edl2l",
@@ -38,17 +38,17 @@ See the [.actor.run lexicon here](./lexicons/games/gamesgamesgamesgames/actor/ru
   "playingWith": [
     { "atproto": "did:plc:sy4qmi35imvto5yjhuwdeozk", "steam": "76561198009200312"}
   ],
-  // The ID of the character you're playing as, if that's a choice
-  "character": "silent",
   // The seed of the run, if using seeded play
   "seed": "AXK36RTM4T",
   // Attributes that are configured before the run begins
   "loadout":{
     // sts2
-    "ascension": 1
+    "character": "silent",
+    // Representing Ascension level 1
+    "difficulty": 1
   },
-  // open ended object for single values which accumulate or alter through the game as a measure of how well you're doing
-  "scores": {
+  // Open ended object for single values which accumulate or alter through the game as a measure of how well you're doing
+  "progress": {
     "act": 2,
     "floor": 19,
     "hp": 34,

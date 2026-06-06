@@ -1,0 +1,122 @@
+{
+	"lexicon": 1,
+	"id": "games.gamesgamesgamesgames.actor.run",
+	"defs": {
+		"main": {
+			"type": "record",
+			"description": "A single play-through for a roguelike or similarly run-based game. Is updated as the run progresses. The rkey must be consistent through the run (eg. derived deterministically from the start time and the game seed) so that updates target the same record, and multiplayer participants writing to their own PDSs converge on the same rkey.",
+			"key": "tid",
+			"record": {
+				"type": "object",
+				"required": [
+					"game",
+					"stats",
+					"startedAt",
+					"updatedAt"
+				],
+				"properties": {
+					"game": {
+						"type": "string",
+						"format": "at-uri",
+						"description": "AT-URI of the `games.gamesgamesgamesgames.game` record this for the game being played."
+					},
+					"stats": {
+						"type": "string",
+						"format": "at-uri",
+						"description": "AT-URI of the player's `games.gamesgamesgamesgames.actor.stats` record for this game, updated alongside finished runs."
+					},
+					"playingWith": {
+						"type": "array",
+						"description": "Other participants in a multiplayer run. Because the rkey is derived consistently across all participants, each entry's record can be fetched easily with `(participantDID, games.gamesgamesgamesgames.actor.run, rkey)`.",
+						"items": {
+							"type": "ref",
+							"ref": "#participant"
+						}
+					},
+					"seed": {
+						"type": "string",
+						"description": "The run's seed, when the game uses seeded play. Serialised as a string to preserve precision for ulong/large-integer seeds."
+					},
+					"loadout": {
+						"type": "ref",
+						"ref": "#loadout",
+						"description": "Game-specific run configuration (for this player, or global) set before the run begins (e.g. StS2's ascension and chosen character)."
+					},
+					"progress": {
+						"type": "unknown",
+						"description": "Game-specific progress indicators, at the `updatedAt` moment in time, that change through the run (e.g. health, gold, kills). Open-ended object keyed and valued at the game's discretion."
+					},
+					"acquisitions": {
+						"type": "array",
+						"description": "Things the player has acquired during the run, in pickup order. Each item may use the generic `games.gamesgamesgamesgames.gameItem` shape or a game-specific lexicon type with richer fields. Game-specific types should also expose `id` and may expose `name`/`useCount` for default renderers.",
+						"items": {
+							"type": "union",
+							"refs": [
+								"games.gamesgamesgamesgames.gameItem"
+							],
+							"closed": false
+						}
+					},
+					"startedAt": {
+						"type": "string",
+						"format": "datetime",
+						"description": "Wall-clock time the run began."
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "datetime",
+						"description": "Wall-clock time this record was last written. May be later than `endedAt` if a final update is written after the run concludes."
+					},
+					"endedAt": {
+						"type": "string",
+						"format": "datetime",
+						"description": "Wall-clock time the player stopped playing. Unset while the run is still in progress."
+					},
+					"duration": {
+						"type": "integer",
+						"minimum": 0,
+						"description": "Seconds the player spent actively playing this run. May be shorter than `endedAt - startedAt` if the game was paused or save-and-quitted between sessions."
+					},
+					"outcome": {
+						"type": "string",
+						"description": "How the run ended. Unset while the run is still in progress. Implementations may use the listed `knownValues` or extend them with a `:reason` suffix (e.g. `failed:time`, `failed:health`).",
+						"knownValues": [
+							"failed",
+							"abandoned",
+							"succeeded"
+						]
+					}
+				}
+			}
+		},
+		"participant": {
+			"type": "object",
+			"description": "Another player observed in a multiplayer run. At least one of `atproto` or `steam` should be set. `atproto` may be backfilled later (e.g. via `dev.keytrace.reverseLookup`) once it can be resolved from the platform id.",
+			"properties": {
+				"atproto": {
+					"type": "string",
+					"format": "did",
+					"description": "Atproto DID of the participant, when known."
+				},
+				"steam": {
+					"type": "string",
+					"description": "SteamID64 of the participant as a decimal string, when playing on Steam."
+				}
+			}
+		},
+		"loadout": {
+			"type": "object",
+			"description": "An open list of attributes set up by the player before a run starts. Named keys should be used when applicable.",
+			"properties": {
+				"character": {
+					"type": "string",
+					"description": "For games where a character is choosable, the stable identifier of who the player chose for this run."
+				},
+				"difficulty": {
+					"type": "integer",
+					"description": "For games where a difficulty level is choosable. If the difficulty isn't an integer that gets higher with harder difficulty, then ignore this field an use a custom one."
+				}
+			}
+		}
+	}
+}
