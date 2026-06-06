@@ -1,6 +1,6 @@
 {
 	"lexicon": 1,
-	"id": "games.gamesgamesgamesgames.actor.run",
+	"id": "games.gamesgamesgamesgames.actor.play",
 	"defs": {
 		"main": {
 			"type": "record",
@@ -25,6 +25,11 @@
 						"type": "string",
 						"format": "at-uri",
 						"description": "AT-URI of the player's `games.gamesgamesgamesgames.actor.stats` record for this game, updated alongside finished runs."
+					},
+					"forkedFrom": {
+						"type": "ref",
+						"description": "If the game allows save forking and this record represents progress after a forked save, this should point to the `games.gamesgamesgamesgames.play` record of the previous save.",
+						"ref": "com.atproto.repo.strongRef"
 					},
 					"playingWith": {
 						"type": "array",
@@ -186,10 +191,11 @@
 		},
 		"outcome": {
 			"type": "object",
+			"description": "If the play-through ended, how it ended. Absent implies in-progress, but if a backlink to a `forkedFrom` is present it may just be obsolete.",
 			"properties": {
 				"type": {
 					"type": "string",
-					"description": "How the run ended. The free text `outcomeCause` can be used in conjunction.",
+					"description": "The high-level outcome of the play-through. The free text `outcomeCause` can be used in conjunction.",
 					"knownValues": [
 						"failed",
 						"abandoned",
