@@ -87,8 +87,18 @@ See the [.actor.run lexicon here](./lexicons/games/gamesgamesgamesgames/actor/ru
   "duration": 2837,
   // What happened at the end of the game
   // Should be unset for in progress runs
-  // Known values are: failed, abandonned, succeeded
-  // Others can be any shape, or a subcategory eg. failed:time, failed:health
-  "outcome": "failed"
+  "outcome": {
+    // The overarching outcome type: failed, abandoned, succeeded
+    "type": "failed",
+    // An id for the reason behind the outomce, eg. the win scenario, or boss that killed you
+    "cause": "bygone-effigy"
+  },
+  "versions" {
+    "game": "0.107.0",
+    "additional": [
+      {"name": "sts2-atproto", "version": "0.16.1"},
+      {"name": "atproto-gaming-dotnet", "version": "0.0.1"}
+    ]
+  }
 }
 ```

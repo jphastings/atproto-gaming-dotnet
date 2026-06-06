@@ -12,7 +12,8 @@
 					"game",
 					"stats",
 					"startedAt",
-					"updatedAt"
+					"updatedAt",
+					"versions"
 				],
 				"properties": {
 					"game": {
@@ -37,10 +38,10 @@
 						"type": "string",
 						"description": "The run's seed, when the game uses seeded play. Serialised as a string to preserve precision for ulong/large-integer seeds."
 					},
-					"loadout": {
+					"settings": {
 						"type": "ref",
-						"ref": "#loadout",
-						"description": "Game-specific run configuration (for this player, or global) set before the run begins (e.g. StS2's ascension and chosen character)."
+						"ref": "#settings",
+						"description": "Game-specific run settings (for this player, or global) set before the run begins (e.g. StS2's ascension and chosen character)."
 					},
 					"progress": {
 						"type": "unknown",
@@ -48,7 +49,7 @@
 					},
 					"acquisitions": {
 						"type": "array",
-						"description": "Things the player has acquired during the run, in pickup order. Each item may use the generic `games.gamesgamesgamesgames.gameItem` shape or a game-specific lexicon type with richer fields. Game-specific types should also expose `id` and may expose `name`/`useCount` for default renderers.",
+						"description": "Things the player has acquired during the run, in pickup order. May be a 'meta' unlockable, or an in-run item. Each item may use the generic `games.gamesgamesgamesgames.gameItem` shape or a game-specific lexicon type with richer fields. Game-specific types should also expose `id` and may expose `name`/`useCount` for default renderers.",
 						"items": {
 							"type": "union",
 							"refs": [
@@ -77,14 +78,23 @@
 						"minimum": 0,
 						"description": "Seconds the player spent actively playing this run. May be shorter than `endedAt - startedAt` if the game was paused or save-and-quitted between sessions."
 					},
+					"route": {
+						"type": "array",
+						"description": "The route through the game the run has gone through, so far.",
+						"items": {
+							"type": "string",
+							"description": "A game-specific serialisation of a stop on the route."
+						}
+					},
 					"outcome": {
-						"type": "string",
-						"description": "How the run ended. Unset while the run is still in progress. Implementations may use the listed `knownValues` or extend them with a `:reason` suffix (e.g. `failed:time`, `failed:health`).",
-						"knownValues": [
-							"failed",
-							"abandoned",
-							"succeeded"
-						]
+						"type": "ref",
+						"description": "How the run ended. Unset while the run is still in progress.",
+						"ref": "#outcome"
+					},
+					"versions": {
+						"type": "ref",
+						"description": "Version numbers for the game, mods, and this atproto core.",
+						"ref": "#versions"
 					}
 				}
 			}
@@ -104,17 +114,88 @@
 				}
 			}
 		},
-		"loadout": {
+		"settings": {
 			"type": "object",
 			"description": "An open list of attributes set up by the player before a run starts. Named keys should be used when applicable.",
 			"properties": {
+				"mode": {
+					"type": "string",
+					"description": "For games with different modes of play eg. a daily challenge, the stable name of the mode of play."
+				},
 				"character": {
 					"type": "string",
 					"description": "For games where a character is choosable, the stable identifier of who the player chose for this run."
 				},
 				"difficulty": {
 					"type": "integer",
-					"description": "For games where a difficulty level is choosable. If the difficulty isn't an integer that gets higher with harder difficulty, then ignore this field an use a custom one."
+					"description": "For games where a difficulty level is choosable. If the difficulty isn't easily mappable to an integer that gets higher with harder difficulty, then ignore this field an use a custom one."
+				},
+				"items": {
+					"type": "array",
+					"description": "Any items applied to this run, particularly 'meta' items unlcoked in previous runs.",
+					"items": {
+						"type": "union",
+						"closed": false,
+						"refs": [
+							"game.gamesgamesgamesgames.gameItem"
+						]
+					}
+				}
+			}
+		},
+		"outcome": {
+			"type": "object",
+			"properties": {
+				"type": {
+					"type": "string",
+					"description": "How the run ended. The free text `outcomeCause` can be used in conjunction.",
+					"knownValues": [
+						"failed",
+						"abandoned",
+						"succeeded"
+					]
+				},
+				"cause": {
+					"type": "string",
+					"description": "Additional game-specific context about the outcome type, eg. the id of the boss who defeated the player."
+				}
+			}
+		},
+		"versions": {
+			"type": "object",
+			"required": [
+				"game"
+			],
+			"properties": {
+				"game": {
+					"type": "string",
+					"description": "The version string of the game itself"
+				},
+				"additional": {
+					"type": "array",
+					"description": "Other software running with the game, eg. mods or an atproto gaming core",
+					"items": {
+						"type": "ref",
+						"ref": "#softwareVersion"
+					}
+				}
+			}
+		},
+		"softwareVersion": {
+			"type": "object",
+			"required": [
+				"name",
+				"version"
+			],
+			"description": "A named piece of software, and its version number",
+			"properties": {
+				"name": {
+					"type": "string",
+					"description": "Name of the piece of software"
+				},
+				"version": {
+					"type": "string",
+					"description": "Its version number"
 				}
 			}
 		}
