@@ -1,0 +1,91 @@
+{
+  "$type": "games.gamesgamesgamesgames.actor.play",
+  "game": "at://did:web:gamesgamesgamesgames.games/games.gamesgamesgamesgames.game/3mgkepr4oq22l",
+  "stats": "at://did:plc:ephkzpinhaqcabtkugtbzrwu/games.gamesgamesgamesgames.actor.stats/3mgktp4ra8n2m",
+  "playingWith": [
+    {
+      "atproto": "did:plc:sy4qmi35imvto5yjhuwdeozk",
+      "steam": "76561198009200312"
+    },
+    {
+      "atproto": "did:plc:re253gupqudlfcugvxhdlr7v",
+      "steam": "76561199436603652"
+    }
+  ],
+  "settings": {
+    "mode": "classic",
+    "map": "usa",
+    "color": "blue"
+  },
+  "progress": {
+    "routes": [
+      "los_angeles-phoenix",
+      "phoenix-denver",
+      "denver-kansas_city",
+      "kansas_city-saint_louis",
+      "saint_louis-chicago",
+      "chicago-pittsburgh",
+      "kansas_city-oklahoma_city",
+      "oklahoma_city-dallas",
+      "dallas-houston"
+    ],
+    "outcome": {
+      "type": "succeeded",
+      "cause": "highest_score"
+    },
+    "finalScore": 57,
+    "trainsRemaining": 21,
+    "achievedTickets": [
+      "los_angeles-chicago",
+      "denver-pittsburgh",
+      "kansas_city-houston"
+    ]
+  },
+  "acquisitions": [
+    {
+      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "id": "los_angeles-chicago",
+      "kind": "ticket",
+      "name": "Los Angeles → Chicago",
+      "addedAt": "2026-06-02T20:00:30.000Z"
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "id": "denver-pittsburgh",
+      "kind": "ticket",
+      "name": "Denver → Pittsburgh",
+      "addedAt": "2026-06-02T20:00:30.000Z"
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "id": "kansas_city-houston",
+      "kind": "ticket",
+      "name": "Kansas City → Houston",
+      "addedAt": "2026-06-02T20:14:20.000Z"
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "id": "seattle-los_angeles",
+      "kind": "ticket",
+      "name": "Seattle → Los Angeles",
+      "addedAt": "2026-06-02T20:22:40.000Z"
+    }
+  ],
+  "startedAt": "2026-06-02T20:00:00.000Z",
+  "updatedAt": "2026-06-02T20:29:02.350Z",
+  "endedAt": "2026-06-02T20:29:00.000Z",
+  "duration": 1740,
+  "versions": {
+    "game": "2.7.12",
+    "additional": [
+      {
+        "name": "ttr-atproto",
+        "version": "0.2.0"
+      },
+      {
+        "name": "atproto-gaming-dotnet",
+        "version": "0.0.1"
+      }
+    ]
+  }
+}

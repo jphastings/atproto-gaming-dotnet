@@ -112,6 +112,11 @@
 					"minimum": 0,
 					"description": "How many times this item was used during the run (cards played, equipment activated, abilities triggered). Omit for passive items where 'use' isn't a meaningful concept, or when the game doesn't track this."
 				},
+				"addedAt": {
+					"type": "string",
+					"description": "The wall-clock time this item was added to this list, if relevant.",
+					"format": "datetime"
+				},
 				"extra": {
 					"type": "array",
 					"items": {

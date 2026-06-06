@@ -1,0 +1,65 @@
+{
+  "$type": "games.gamesgamesgamesgames.actor.play",
+  "game": "at://did:web:gamesgamesgamesgames.games/games.gamesgamesgamesgames.game/3mghbc3sps52d",
+  "stats": "at://did:plc:ephkzpinhaqcabtkugtbzrwu/games.gamesgamesgamesgames.actor.stats/3mh9kf2ap6n2w",
+  "playingWith": [
+    {
+      "atproto": "did:plc:re253gupqudlfcugvxhdlr7v",
+      "steam": "76561198044556677"
+    }
+  ],
+  "settings": {
+    "mode": "quickmatch",
+    "character": "soviet",
+    "map": "a_path_beyond"
+  },
+  "progress": {
+    "outcome": {
+      "type": "succeeded",
+      "cause": "annihilation"
+    },
+    "credits": {
+      "harvested": 41250,
+      "spent": 38900
+    },
+    "unitsBuilt": 214,
+    "unitsLost": 138,
+    "buildingsDestroyed": 27,
+    "apm": 96
+  },
+  "acquisitions": [
+    {
+      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "id": "iron_curtain",
+      "kind": "superweapon",
+      "name": "Iron Curtain Device",
+      "useCount": 3,
+      "addedAt": "2026-06-04T21:26:40.000Z"
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "id": "missile_silo",
+      "kind": "superweapon",
+      "name": "Missile Silo",
+      "useCount": 1,
+      "addedAt": "2026-06-04T21:30:18.000Z"
+    }
+  ],
+  "startedAt": "2026-06-04T21:14:02.000Z",
+  "updatedAt": "2026-06-04T21:34:13.221Z",
+  "endedAt": "2026-06-04T21:34:11.730Z",
+  "duration": 1147,
+  "versions": {
+    "game": "1.153.11",
+    "additional": [
+      {
+        "name": "ra-atproto",
+        "version": "0.2.0"
+      },
+      {
+        "name": "atproto-gaming-dotnet",
+        "version": "0.0.1"
+      }
+    ]
+  }
+}

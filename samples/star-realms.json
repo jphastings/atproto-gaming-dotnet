@@ -1,0 +1,103 @@
+{
+  "$type": "games.gamesgamesgamesgames.actor.play",
+  "game": "at://did:web:gamesgamesgamesgames.games/games.gamesgamesgamesgames.game/3mghex5kej52d",
+  "stats": "at://did:plc:ephkzpinhaqcabtkugtbzrwu/games.gamesgamesgamesgames.actor.stats/3mh9x2tqd5n2k",
+  "playingWith": [
+    {
+      "atproto": "did:plc:re253gupqudlfcugvxhdlr7v",
+      "steam": "76561198044556677"
+    }
+  ],
+  "settings": {
+    "mode": "ranked",
+    "sets": [
+      "core",
+      "colony_wars"
+    ]
+  },
+  "progress": {
+    "outcome": {
+      "type": "succeeded"
+    },
+    "turns": 14,
+    "authority": 37,
+    "opponentAuthority": 0,
+    "combatDealt": 112,
+    "tradeGenerated": 96
+  },
+  "acquisitions": [
+    {
+      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "id": "cutter",
+      "kind": "ship",
+      "name": "Cutter",
+      "useCount": 5,
+      "addedAt": "2026-06-05T14:03:10.000Z"
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "id": "imperial_fighter",
+      "kind": "ship",
+      "name": "Imperial Fighter",
+      "useCount": 4,
+      "addedAt": "2026-06-05T14:04:55.000Z"
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "id": "battle_station",
+      "kind": "base",
+      "name": "Battle Station",
+      "useCount": 4,
+      "addedAt": "2026-06-05T14:06:40.000Z"
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "id": "trade_bot",
+      "kind": "ship",
+      "name": "Trade Bot",
+      "useCount": 4,
+      "addedAt": "2026-06-05T14:08:30.000Z"
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "id": "blob_wheel",
+      "kind": "base",
+      "name": "Blob Wheel",
+      "useCount": 3,
+      "addedAt": "2026-06-05T14:10:15.000Z"
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "id": "battle_blob",
+      "kind": "ship",
+      "name": "Battle Blob",
+      "useCount": 2,
+      "addedAt": "2026-06-05T14:12:40.000Z"
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "id": "command_ship",
+      "kind": "ship",
+      "name": "Command Ship",
+      "useCount": 2,
+      "addedAt": "2026-06-05T14:14:50.000Z"
+    }
+  ],
+  "startedAt": "2026-06-05T14:02:00.000Z",
+  "updatedAt": "2026-06-05T14:16:03.500Z",
+  "endedAt": "2026-06-05T14:16:02.000Z",
+  "duration": 842,
+  "versions": {
+    "game": "5.2.0",
+    "additional": [
+      {
+        "name": "starrealms-atproto",
+        "version": "0.1.0"
+      },
+      {
+        "name": "atproto-gaming-dotnet",
+        "version": "0.0.1"
+      }
+    ]
+  }
+}

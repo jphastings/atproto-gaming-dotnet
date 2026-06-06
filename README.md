@@ -71,12 +71,13 @@ See the [.actor.play lexicon here](./lexicons/games/gamesgamesgamesgames/actor/p
   },
   // Things you've acquired inside the play-through.
   "acquisitions": [
-    // You can use the generic type, which just requires an id, and has an optional name & useCount
+    // You can use the generic type, which requires an id, and has an optional name, addedAt & useCount
     { "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
       "id": "silent.strike+/corrupted",
       "kind": "card",
       "name": "Strike (Upgraded, Corrupted)",
       "useCount": 40,
+      "addedAt": "2026-04-18T13:38:20.221Z",
       "extra": [
         { "$type": "com.megacrit.sts2.card",
           "deck": "silent",
@@ -86,7 +87,8 @@ See the [.actor.play lexicon here](./lexicons/games/gamesgamesgamesgames/actor/p
     { "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
       "kind": "relic",
       "id": "cracked_core",
-      "name": "Cracked Core" }
+      "name": "Cracked Core",
+      "addedAt": "2026-04-18T13:52:10.221Z" }
   ],
   // When the play-through started
   "startedAt": "2026-04-18T13:30:44.221Z",

@@ -1,0 +1,82 @@
+{
+  "$type": "games.gamesgamesgamesgames.actor.play",
+  "game": "at://did:web:gamesgamesgamesgames.games/games.gamesgamesgamesgames.game/3mghbbtp46f2d",
+  "stats": "at://did:plc:ephkzpinhaqcabtkugtbzrwu/games.gamesgamesgamesgames.actor.stats/3mh7r2af8nt2k",
+  "settings": {
+    "mode": "story"
+  },
+  "progress": {
+    "route": [
+      "chamber:00",
+      "chamber:01",
+      "chamber:02",
+      "chamber:03",
+      "chamber:04",
+      "chamber:05",
+      "chamber:06",
+      "chamber:07",
+      "chamber:08",
+      "chamber:09",
+      "chamber:10",
+      "chamber:11",
+      "chamber:12",
+      "chamber:13",
+      "chamber:14",
+      "chamber:15",
+      "chamber:16",
+      "chamber:17",
+      "chamber:18",
+      "chamber:19",
+      "escape",
+      "boss:glados"
+    ],
+    "outcome": {
+      "type": "succeeded",
+      "cause": "glados-destroyed"
+    },
+    "chamber": 19,
+    "deaths": 11,
+    "secondsOnFire": 0
+  },
+  "acquisitions": [
+    {
+      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "id": "ashpd",
+      "kind": "weapon",
+      "name": "Aperture Science Handheld Portal Device",
+      "useCount": 1342,
+      "addedAt": "2026-05-30T20:34:12.000Z"
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "id": "weighted_companion_cube",
+      "kind": "object",
+      "name": "Weighted Companion Cube",
+      "addedAt": "2026-06-01T22:05:43.000Z",
+      "extra": [
+        {
+          "$type": "com.valvesoftware.portal.object",
+          "acquiredInChamber": 17,
+          "incinerated": true
+        }
+      ]
+    }
+  ],
+  "startedAt": "2026-05-30T20:11:07.004Z",
+  "updatedAt": "2026-06-01T22:47:53.610Z",
+  "endedAt": "2026-06-01T22:47:51.880Z",
+  "duration": 10984,
+  "versions": {
+    "game": "1.0.0.1",
+    "additional": [
+      {
+        "name": "portal-atproto",
+        "version": "0.3.2"
+      },
+      {
+        "name": "atproto-gaming-dotnet",
+        "version": "0.0.1"
+      }
+    ]
+  }
+}
