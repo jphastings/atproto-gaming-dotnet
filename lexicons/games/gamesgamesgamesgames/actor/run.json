@@ -49,11 +49,11 @@
 					},
 					"acquisitions": {
 						"type": "array",
-						"description": "Things the player has acquired during the run, in pickup order. May be a 'meta' unlockable, or an in-run item. Each item may use the generic `games.gamesgamesgamesgames.gameItem` shape or a game-specific lexicon type with richer fields. Game-specific types should also expose `id` and may expose `name`/`useCount` for default renderers.",
+						"description": "Items the player has acquired during the run, in pickup order. May be a 'meta' unlockable, or an in-run item.",
 						"items": {
 							"type": "union",
 							"refs": [
-								"games.gamesgamesgamesgames.gameItem"
+								"#gameItem"
 							],
 							"closed": false
 						}
@@ -99,6 +99,40 @@
 				}
 			}
 		},
+		"gameItem": {
+			"type": "object",
+			"description": "A game item (eg. card, weapon, upgrade, etc) containing some generic information. Can be extended with game-specific lexicons.",
+			"required": [
+				"id"
+			],
+			"properties": {
+				"id": {
+					"type": "string",
+					"description": "Stable, game-defined identifier for this item. Language-independent and should be consistent across uses & game versions. Optional conventions include using dot-separation to namespace (eg. `card.silent.strike`) and forward slashes for modifiers (eg. `card.silent.strike/corrupted`)."
+				},
+				"kind": {
+					"type": "string",
+					"description": "The kind of item this is (eg.`card` or `relic`)."
+				},
+				"name": {
+					"type": "string",
+					"description": "Human-readable display name in the locale active at write time. Optional, but recommended so renderers without a localised mapping of `id` can fall back to displaying this. Eg. `Strike (Upgraded, Corrupted)`."
+				},
+				"useCount": {
+					"type": "integer",
+					"minimum": 0,
+					"description": "How many times this item was used during the run (cards played, equipment activated, abilities triggered). Omit for passive items where 'use' isn't a meaningful concept, or when the game doesn't track this."
+				},
+				"extra": {
+					"type": "array",
+					"items": {
+						"type": "union",
+						"description": "Game-specific lexicons that can hold additional information about this item.",
+						"closed": false
+					}
+				}
+			}
+		},
 		"participant": {
 			"type": "object",
 			"description": "Another player observed in a multiplayer run. At least one of `atproto` or `steam` should be set. `atproto` may be backfilled later (e.g. via `dev.keytrace.reverseLookup`) once it can be resolved from the platform id.",
@@ -132,12 +166,12 @@
 				},
 				"items": {
 					"type": "array",
-					"description": "Any items applied to this run, particularly 'meta' items unlcoked in previous runs.",
+					"description": "Any items applied at the start of this run, particularly 'meta' items unlocked in previous runs.",
 					"items": {
 						"type": "union",
 						"closed": false,
 						"refs": [
-							"game.gamesgamesgamesgames.gameItem"
+							"#gameItem"
 						]
 					}
 				}

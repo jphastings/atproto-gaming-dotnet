@@ -59,23 +59,21 @@ See the [.actor.run lexicon here](./lexicons/games/gamesgamesgamesgames/actor/ru
   // Things you've acquired inside the run.
   "acquisitions": [
     // You can use the generic type, which just requires an id, and has an optional name & useCount
-    { "$type": "games.gamesgamesgamesgames.gameItem",
-      "id": "card.silent.strike+/corrupted",
-      "name": "Card: Strike (Upgraded, Corrupted)",
-      "useCount": 40 },
-    { "$type": "games.gamesgamesgamesgames.gameItem",
-      "id": "relic.cracked_core",
-      "name": "Relic: Cracked Core" },
-    // Or you can define your own for more control over content/
-    // This will be useful when WebTiles/default renderings for lexicons are more well defined/adopted.
-    // Custom types should have an `id` field & an optional name/useCount
-    { "$type": "com.megacrit.sts2.cards",
-      "id": "silent.strike",
-      "upgraded": true,
-      "enchantment": "corrupted",
-      "useCount": 40},
-    { "$type": "com.megacrit.sts2.relic",
-      "id": "cracked_core" }
+    { "$type": "games.gamesgamesgamesgames.game#gameItem",
+      "id": "silent.strike+/corrupted",
+      "kind": "card",
+      "name": "Strike (Upgraded, Corrupted)",
+      "useCount": 40,
+      "extra": [
+        { "$type": "com.megacrit.sts2.card",
+          "deck": "silent",
+          "name": "strike",
+          "upgraded": true,
+          "enchantment": "corrupted" }]},
+    { "$type": "games.gamesgamesgamesgames.game#gameItem",
+      "kind": "relic",
+      "id": "cracked_core",
+      "name": "Cracked Core" },
   ],
   // Should always be present, and consistent (used to generate consistent rkey)
   "startedAt": "2026-04-18T13:30:44.221Z",
