@@ -1,0 +1,14 @@
+# .NET build output
+bin/
+obj/
+*.user
+
+# Test results
+[Tt]est[Rr]esults/
+
+# Local config written at runtime
+config.json
+outbox/
+
+# OS
+.DS_Store

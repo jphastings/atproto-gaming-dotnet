@@ -2,6 +2,126 @@
 
 A package for C#/dotnet games which can be used as a core to atproto functionality, eg. posting details of gameplay to a player's PDS. For use in mods, or in game development.
 
+The package (`ByJP.AtprotoGaming.Core`) targets **`netstandard2.0`**, so the same DLL loads under BepInEx / .NET Framework 4.7.2 (Unity Mono mods) and under .NET 9 (Godot.NET, modern games) alike. It references no game engine — you keep the engine hooks; it does the atproto plumbing.
+
+## Using the package
+
+You bring three tiny adapters and your record bodies; the package handles identity, login, token refresh, an on-disk retry queue, deterministic record keys, rolling stats, and (optionally) signing.
+
+### 1. Install
+
+```sh
+dotnet add package ByJP.AtprotoGaming.Core
+```
+
+### 2. Wire three adapters
+
+The package talks to your runtime only through these. None is more than a few lines.
+
+```csharp
+using ByJP.AtprotoGaming.Core;
+using ByJP.AtprotoGaming.Core.Adapters;
+
+// Logging — point it at your runtime's logger.
+sealed class MyLog : ILogSink
+{
+    public void Info(string m)  => MyGameLogger.Info($"[atproto] {m}");
+    public void Warn(string m)  => MyGameLogger.Warn($"[atproto] {m}");
+    public void Error(string m, System.Exception? e = null) => MyGameLogger.Error($"[atproto] {m}", e);
+}
+ILogSink log = new MyLog();
+
+// Where config.json + the outbox live — usually next to your plugin DLL.
+IFileSystem fs = FileSystem.NextTo<MyPlugin>();   // or FileSystem.At("/some/dir")
+
+// IClock defaults to wall-clock; you rarely need to supply one.
+```
+
+> BepInEx: wrap your `ManualLogSource`. Godot: wrap `GD.Print`/`GD.PushWarning`. Plain .NET: use the bundled `ConsoleLogSink`.
+
+### 3. Load config and construct the client once
+
+`config.json` is created on first run with a visible "not configured yet" banner in your log; the player fills in their handle + [app password](https://bsky.app/settings/app-passwords). Subclass `CoreConfig` if you want your own settings in the same file.
+
+```csharp
+var config = ConfigStore<CoreConfig>.LoadOrCreate(fs, log);
+
+var atproto = new AtprotoGamingClient(new AtprotoGamingOptions
+{
+    FileSystem = fs,
+    Log        = log,
+    Config     = config,
+    // SigningKey = SigningKey.FromDidKey("did:key:z…private", "your.game.mod#attestation"), // optional, see below
+});
+```
+
+### 4. Boot login off the main thread, and react to state
+
+```csharp
+_ = System.Threading.Tasks.Task.Run(atproto.LoginAsync);   // resolves identity, logs in, drains the queue
+
+atproto.Auth.Changed += () =>
+    UpdateBadge(atproto.Auth.Status, atproto.Auth.Error);  // Unconfigured / Checking / Ok / Failed / Offline
+```
+
+The client never starts its own threads or timers — you decide when work runs. If the network is down at boot it goes `Offline` (seeded from the cached DID) and queues; queued records flush automatically on the next successful login and after each successful publish.
+
+### 5. Publish a play-through
+
+You assemble the record body (a `System.Text.Json.Nodes.JsonObject`) against the [lexicon](#play-through-details). Derive a **stable rkey** so resumes and every multiplayer participant converge on one record:
+
+```csharp
+using System.Text.Json.Nodes;
+
+const string PlayCollection = "games.gamesgamesgamesgames.actor.play";
+var gameRef = new JsonObject { ["uri"] = "at://did:web:gamesgamesgamesgames.games/games.gamesgamesgamesgames.game/3mglj4k2edl2l" };
+
+string rkey = Tid.FromPlayThrough(startedAtUnixSeconds, runSeed);   // runSeed: ulong or string
+
+// `stats` is required by the lexicon — get/create the rolling-stats record up front.
+string statsUri = await atproto.Stats.EnsureAsync(gameRef, source: "steam");
+
+var play = new JsonObject
+{
+    ["$type"]     = PlayCollection,
+    ["game"]      = gameRef["uri"]!.DeepClone(),
+    ["stats"]     = statsUri,
+    ["startedAt"] = startedAtIso,
+    ["updatedAt"] = startedAtIso,
+    ["versions"]  = new JsonObject
+    {
+        ["game"]       = gameVersion,
+        ["additional"] = new JsonArray { new JsonObject { ["name"] = "my-mod", ["version"] = "1.2.3" } },
+        // the package appends its own atproto-gaming-dotnet entry here automatically
+    },
+};
+
+await atproto.Records.PutAsync(PlayCollection, rkey, play);
+```
+
+**On significant progress**, mutate `play` (`updatedAt`, `progress`, `acquisitions`, …) and PUT again with the **same rkey** — it replaces the previous state. Throttling/dirty-bit logic is yours; the package just publishes when asked.
+
+**At the end**, set the outcome and roll the stats:
+
+```csharp
+play["endedAt"]  = endedAtIso;
+play["duration"] = durationSeconds;
+((JsonObject)play["progress"]!)["outcome"] = new JsonObject { ["type"] = "failed", ["cause"] = "bygone-effigy" };
+
+await atproto.Stats.EnsureAndUpdateAsync(gameRef, "steam", durationSeconds, endedAtIso);  // adds minutes, bumps lastPlayed
+await atproto.Records.PutAsync(PlayCollection, rkey, play);
+```
+
+`PutAsync` returns a `PutResult` (`Published` / `Queued` / `Dropped`). On game crash, anything already queued is on disk and flushes next launch — there is no shutdown ceremony.
+
+### Optional extras
+
+- **Signed records** — pass a `SigningKey` in the options; every record then carries a badge.blue-style `signatures` entry over its CID, verifiable by the published public `did:key`. Records still publish fine unsigned.
+- **Save-fork lineage** — `StrongRef.Create(uri, cid)` (or `StrongRef.FromRecordBody(uri, body)` to compute the CID) for the lexicon's `forkedFrom`.
+- **Multiplayer backfill** — `atproto.Steam.LookupDidAsync(steamId64)` resolves a SteamID64 to a DID for `playingWith[].atproto`.
+- **Achievements** — `atproto.Achievements.TryClaim(id)` de-dups unlock writes within a session; publish to your own NSID via `atproto.Records.PutAsync`.
+- **Other records** — `Records.PutAsync` is collection-agnostic; pass any NSID (lobby records, achievement logs, your stats record, …).
+
 ## Data structure
 
 This package uses the [games.gamesgamesgamesgames lexicons](https://gamesgamesgamesgames.games), with optional extensibility for the game you're integrating with.

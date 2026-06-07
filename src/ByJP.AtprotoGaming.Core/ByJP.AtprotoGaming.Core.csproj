@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- ns2.0 is the floor that loads under BepInEx/.NET Framework 4.7.2 (RoR2)
+         and .NET 9 (StS2) alike. See requirements NF2. -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- We document the meaningful surface; don't fail on undocumented ctors/obvious props. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+
+    <AssemblyName>ByJP.AtprotoGaming.Core</AssemblyName>
+    <RootNamespace>ByJP.AtprotoGaming.Core</RootNamespace>
+
+    <!-- NuGet metadata: package id = assembly name = root namespace (NF8). -->
+    <PackageId>ByJP.AtprotoGaming.Core</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>JP Hastings-Spital</Authors>
+    <Description>Engine-agnostic AT Protocol core for games: XRPC client, identity, auth-state, on-disk outbox, deterministic rkeys, rolling stats, optional ECDSA signing. Drop into a Unity/BepInEx, Godot.NET, or plain .NET game or mod to publish play-throughs to a player's PDS.</Description>
+    <PackageTags>atproto;bluesky;gaming;xrpc;pds;modding</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- JsonNode/JsonObject + reflection serialization on ns2.0. -->
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <!-- PostAsJsonAsync / ReadFromJsonAsync extension methods on ns2.0. -->
+    <PackageReference Include="System.Net.Http.Json" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ByJP.AtprotoGaming.Core.Tests" />
+  </ItemGroup>
+
+</Project>
