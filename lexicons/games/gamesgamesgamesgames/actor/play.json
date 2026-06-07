@@ -84,6 +84,14 @@
 						"type": "ref",
 						"description": "Version numbers for the game, mods, and this atproto core.",
 						"ref": "#versions"
+					},
+					"signatures": {
+						"type": "array",
+						"description": "Optional CID-first inline attestations over this record, in the badge.blue style (https://badge.blue/).",
+						"items": {
+							"type": "ref",
+							"ref": "#signature"
+						}
 					}
 				}
 			}
@@ -286,6 +294,30 @@
 				"version": {
 					"type": "string",
 					"description": "Its version number"
+				}
+			}
+		},
+		"signature": {
+			"type": "object",
+			"description": "A single CID-first inline attestation, in badge.blue fiorm (https://badge.blue/).",
+			"required": [
+				"cid",
+				"key",
+				"signature"
+			],
+			"properties": {
+				"cid": {
+					"type": "string",
+					"format": "cid",
+					"description": "CIDv1 (DAG-CBOR, SHA-256) of this record serialised with the `signatures` field removed."
+				},
+				"key": {
+					"type": "string",
+					"description": "The signer's public key as a `did:key` (P-256 / secp256r1), used to verify `signature`."
+				},
+				"signature": {
+					"type": "bytes",
+					"description": "ECDSA P-256 signature over the bytes of `cid`, normalised to low-S form."
 				}
 			}
 		}
