@@ -5,7 +5,7 @@
 		"main": {
 			"type": "record",
 			"description": "A single play-through of a game, updated as it progresses. The rkey should be consistent between saves (eg. for rogue-likes, derived deterministically from the start time and the game seed, or a lineage-based save ID) so that updates target the same record, and multiplayer participants writing to their own PDSs converge on the same rkey.",
-			"key": "tid",
+			"key": "any",
 			"record": {
 				"type": "object",
 				"required": [

@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using ByJP.AtprotoGaming.Core.Adapters;
 using ByJP.AtprotoGaming.Core.Signing;
@@ -41,6 +43,9 @@ namespace ByJP.AtprotoGaming.Core
     {
         private readonly IConfigStore _config;
         private readonly ILogSink _log;
+        private readonly IClock _clock;
+
+        private readonly PlayWriter _playWriter;
 
         public AuthState Auth { get; }
         public AtprotoClient Client { get; }
@@ -57,7 +62,8 @@ namespace ByJP.AtprotoGaming.Core
             _log = options.Log ?? throw new ArgumentException("Log is required", nameof(options));
             _config = options.Config ?? throw new ArgumentException("Config is required", nameof(options));
             var fs = options.FileSystem ?? throw new ArgumentException("FileSystem is required", nameof(options));
-            var clock = options.Clock ?? SystemClock.Instance;
+            _clock = options.Clock ?? SystemClock.Instance;
+            var clock = _clock;
             var http = options.HttpClient ?? new HttpClient();
 
             Auth = new AuthState();
@@ -72,8 +78,44 @@ namespace ByJP.AtprotoGaming.Core
                 _log.Info($"atproto record signing enabled ({options.SigningKey!.PublicDidKey})");
 
             Records = new RecordPublisher(Client, Auth, Outbox, _log, versions, signer);
-            Stats = new RollingStats(Client, _config, _log, clock);
+
+            var stats = new StatsResolver(Client, _config, clock);
+            var playQueue = new PlayQueue(fs, _log);
+            _playWriter = new PlayWriter(Client, Auth, clock, _log, stats, playQueue, versions, signer);
+
+            Stats = new RollingStats(Client, stats, clock);
             Achievements = new AchievementDeduper();
+        }
+
+        /// <summary>
+        /// Opens a <see cref="PlaySession"/> for a play-through: you supply the id
+        /// and the game/version metadata, and it builds the record for you. Declare
+        /// changes through <see cref="PlaySession.BeginUpdate"/>; the read-modify-write
+        /// with optimistic locking is handled underneath.
+        /// </summary>
+        /// <param name="playId">
+        /// The play's id (record key). Used as-is if it's a valid record key
+        /// (see <see cref="RecordKey"/>), otherwise sanitised deterministically.
+        /// Use <see cref="PlaySession.DerivePlayID"/> for a TID-shaped id.
+        /// </param>
+        /// <param name="game">The game's AT URI (e.g. its cartridge.dev record). Must be a valid AT URI.</param>
+        /// <param name="gameVersion">The game's version string, stored in <c>versions.game</c>.</param>
+        /// <param name="source">The platform the run is on (see <see cref="StatsSource"/>), used to find/create the rolling stats record.</param>
+        /// <param name="additionalVersions">Optional mod name → version entries for <c>versions.additional</c> (the package adds its own).</param>
+        public PlaySession OpenPlay(string playId, string game, string gameVersion, string source,
+            IReadOnlyDictionary<string, string>? additionalVersions = null)
+        {
+            if (string.IsNullOrEmpty(playId)) throw new ArgumentNullException(nameof(playId));
+            if (string.IsNullOrEmpty(gameVersion)) throw new ArgumentNullException(nameof(gameVersion));
+            if (!AtUri.IsValid(game)) throw new ArgumentException($"not a valid AT URI: {game}", nameof(game));
+
+            if (string.IsNullOrEmpty(source)) throw new ArgumentNullException(nameof(source));
+
+            var rkey = RecordKey.Sanitize(playId);
+            var startedAt = _clock.UtcNow.ToUniversalTime().ToString("o");
+
+            JsonObject Seed() => PlaySession.BuildSeed(game, gameVersion, additionalVersions, startedAt);
+            return new PlaySession(_playWriter, rkey, Seed, source);
         }
 
         /// <summary>
@@ -133,6 +175,7 @@ namespace ByJP.AtprotoGaming.Core
             Auth.Set(AuthStatus.Ok, handle: doc.Handle, did: doc.Did, pds: doc.Pds);
             _log.Info($"logged in to atproto as {doc.Handle} ({doc.Did})");
             await Outbox.FlushAsync().ConfigureAwait(false);
+            await _playWriter.FlushAsync().ConfigureAwait(false);
         }
 
         private void SeedOfflineOrFail(CoreConfig cfg, Exception ex)

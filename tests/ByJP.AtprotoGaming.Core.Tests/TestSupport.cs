@@ -1,9 +1,32 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
+using ByJP.AtprotoGaming.Core;
 using ByJP.AtprotoGaming.Core.Adapters;
+using ByJP.AtprotoGaming.Core.Signing;
 
 namespace ByJP.AtprotoGaming.Core.Tests;
+
+internal static class TestKeys
+{
+    /// <summary>Generates a fresh P-256 <see cref="SigningKey"/> for signing tests.</summary>
+    public static SigningKey NewSigningKey(string attestationType = "test.game.record#attestation")
+    {
+        using var ec = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var d = ec.ExportParameters(includePrivateParameters: true).D!;
+        if (d.Length < 32)
+        {
+            var padded = new byte[32];
+            Buffer.BlockCopy(d, 0, padded, 32 - d.Length, d.Length);
+            d = padded;
+        }
+        var prefixed = new byte[2 + 32];
+        prefixed[0] = 0x86; prefixed[1] = 0x26; // P-256 private multicodec
+        Buffer.BlockCopy(d, 0, prefixed, 2, 32);
+        return SigningKey.FromDidKey("did:key:z" + Base58Btc.Encode(prefixed), attestationType);
+    }
+}
 
 internal sealed class FixedClock : IClock
 {

@@ -16,14 +16,18 @@ namespace ByJP.AtprotoGaming.Core
     {
         public int StatusCode { get; }
 
-        /// <summary>The PDS's error body, surfaced verbatim (e.g. an XRPC <c>error</c>/<c>message</c>).</summary>
+        /// <summary>The PDS's error body, surfaced verbatim (e.g. an XRPC <c>message</c>).</summary>
         public string? PdsError { get; }
 
-        public AtprotoPermanentException(int statusCode, string? pdsError)
-            : base($"PDS rejected request: HTTP {statusCode}{(string.IsNullOrEmpty(pdsError) ? "" : $" — {pdsError}")}")
+        /// <summary>The XRPC <c>error</c> name when present (e.g. <c>InvalidSwap</c>, <c>RecordNotFound</c>).</summary>
+        public string? ErrorName { get; }
+
+        public AtprotoPermanentException(int statusCode, string? pdsError, string? errorName = null)
+            : base($"PDS rejected request: HTTP {statusCode}{(string.IsNullOrEmpty(errorName) ? "" : $" {errorName}")}{(string.IsNullOrEmpty(pdsError) ? "" : $" — {pdsError}")}")
         {
             StatusCode = statusCode;
             PdsError = pdsError;
+            ErrorName = errorName;
         }
     }
 

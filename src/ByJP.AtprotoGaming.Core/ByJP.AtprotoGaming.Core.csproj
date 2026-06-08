@@ -8,8 +8,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- We document the meaningful surface; don't fail on undocumented ctors/obvious props. -->
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!-- We document the meaningful surface; don't fail on undocumented ctors/obvious
+         props (CS1591) or partially-documented param lists (CS1573). -->
+    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
 
     <AssemblyName>ByJP.AtprotoGaming.Core</AssemblyName>
     <RootNamespace>ByJP.AtprotoGaming.Core</RootNamespace>
@@ -35,5 +36,20 @@
   <ItemGroup>
     <InternalsVisibleTo Include="ByJP.AtprotoGaming.Core.Tests" />
   </ItemGroup>
+
+  <!-- Ship the analyzer with the package: run it on our own build (dogfood) and
+       pack its DLL under analyzers/dotnet/cs so consumers get the edit-time hints.
+       ReferenceOutputAssembly=false keeps it out of the runtime dependency set. -->
+  <ItemGroup>
+    <ProjectReference Include="..\ByJP.AtprotoGaming.Core.Analyzers\ByJP.AtprotoGaming.Core.Analyzers.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+  </ItemGroup>
+
+  <Target Name="IncludeAnalyzerInPackage" BeforeTargets="_GetPackageFiles" DependsOnTargets="ResolveProjectReferences">
+    <ItemGroup>
+      <None Include="$(MSBuildThisFileDirectory)..\ByJP.AtprotoGaming.Core.Analyzers\bin\$(Configuration)\netstandard2.0\ByJP.AtprotoGaming.Core.Analyzers.dll"
+            Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    </ItemGroup>
+  </Target>
 
 </Project>

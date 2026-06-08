@@ -12,10 +12,17 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" Version="1.1.2" />
+    <!-- Pin Roslyn to >= the analyzer's version; the harness otherwise floats its
+         transitive Roslyn down to an ancient 1.0.1 and conflicts. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.8.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ByJP.AtprotoGaming.Core\ByJP.AtprotoGaming.Core.csproj" />
+    <!-- Plain reference (not OutputItemType=Analyzer): we instantiate the analyzer
+         in tests but must NOT run it on this project's own code. -->
+    <ProjectReference Include="..\..\src\ByJP.AtprotoGaming.Core.Analyzers\ByJP.AtprotoGaming.Core.Analyzers.csproj" />
   </ItemGroup>
 
 </Project>

@@ -7,90 +7,52 @@ namespace ByJP.AtprotoGaming.Core
 {
     /// <summary>
     /// Maintains the player's rolling <c>games.gamesgamesgamesgames.actor.stats</c>
-    /// record alongside finished plays: creates it on first call (caching the rkey
-    /// in config), otherwise reads it, adds the new play's minutes to
-    /// <c>playtime</c>, bumps <c>lastPlayed</c> if newer, and PUTs.
+    /// record for a game + platform: finds it via <see cref="StatsResolver"/> (the
+    /// same record the play links to), adds a finished play's minutes to
+    /// <c>playtime</c>, bumps <c>lastPlayed</c> if newer, and writes it back.
     /// </summary>
     public sealed class RollingStats
     {
-        // The stats lexicon lives in the public games.gamesgamesgamesgames
-        // namespace; pin its shape here. Fields: game, source, playtime (minutes),
-        // lastPlayed, createdAt.
         public const string StatsCollection = "games.gamesgamesgamesgames.actor.stats";
 
         private readonly AtprotoClient _client;
-        private readonly IConfigStore _config;
-        private readonly ILogSink _log;
+        private readonly StatsResolver _resolver;
         private readonly IClock _clock;
 
-        public RollingStats(AtprotoClient client, IConfigStore config, ILogSink log, IClock clock)
+        internal RollingStats(AtprotoClient client, StatsResolver resolver, IClock clock)
         {
             _client = client;
-            _config = config;
-            _log = log;
+            _resolver = resolver;
             _clock = clock;
         }
 
         /// <summary>
-        /// Returns the stats record's AT-URI, creating an empty record (playtime 0)
-        /// if none exists yet — without rolling in any play. Use this at play-through
-        /// start to fill the play record's required <c>stats</c> field; the finished
-        /// play's minutes are added later by <see cref="EnsureAndUpdateAsync"/>.
+        /// Returns the stats record's AT-URI for <paramref name="game"/> +
+        /// <paramref name="source"/>, finding or creating it. Use it to fill a play
+        /// record's <c>stats</c> field up front (the play layer does this for you).
         /// </summary>
-        public async Task<string> EnsureAsync(JsonNode gameRef, string source)
+        public async Task<string> EnsureAsync(string game, string source)
         {
-            if (gameRef == null) throw new ArgumentNullException(nameof(gameRef));
-            var cfg = _config.Core;
-
-            if (!string.IsNullOrEmpty(cfg.StatsRkey))
-            {
-                var existing = await _client.GetRecordAsync(StatsCollection, cfg.StatsRkey).ConfigureAwait(false);
-                if (existing != null)
-                    return $"at://{_client.Did}/{StatsCollection}/{cfg.StatsRkey}";
-                _log.Warn($"cached statsRkey {cfg.StatsRkey} missing on PDS — creating a new one");
-            }
-
-            var nowIso = NowIso();
-            var seed = BuildMerged(null, gameRef, source, deltaMinutes: 0, lastPlayed: nowIso, nowIso: nowIso);
-            return await CreateAndCacheAsync(seed).ConfigureAwait(false);
+            var did = _client.Did;
+            var rkey = await _resolver.EnsureRkeyAsync(did, game, source).ConfigureAwait(false);
+            return Uri(did, rkey);
         }
 
         /// <summary>
-        /// Ensures the stats record exists and rolls in one finished play. Returns
-        /// the stats record's AT-URI so the consumer can set <c>stats</c> on the
-        /// play record. Tolerates a cached rkey whose record no longer exists on
-        /// the PDS (creates a fresh one).
+        /// Rolls one finished play into the stats record: adds its minutes to
+        /// <c>playtime</c> and bumps <c>lastPlayed</c> if newer. Returns the record's AT-URI.
         /// </summary>
-        public async Task<string> EnsureAndUpdateAsync(JsonNode gameRef, string source, int durationSeconds, string endedAtIso)
+        public async Task<string> EnsureAndUpdateAsync(string game, string source, int durationSeconds, string endedAtIso)
         {
-            if (gameRef == null) throw new ArgumentNullException(nameof(gameRef));
-            var cfg = _config.Core;
-            var deltaMinutes = MinutesFor(durationSeconds);
-            var nowIso = NowIso();
+            var did = _client.Did;
+            var rkey = await _resolver.EnsureRkeyAsync(did, game, source).ConfigureAwait(false);
+            var nowIso = _clock.UtcNow.ToUniversalTime().ToString("o");
             var lastPlayed = string.IsNullOrEmpty(endedAtIso) ? nowIso : endedAtIso;
 
-            if (!string.IsNullOrEmpty(cfg.StatsRkey))
-            {
-                var existing = await _client.GetRecordAsync(StatsCollection, cfg.StatsRkey).ConfigureAwait(false);
-                if (existing != null)
-                {
-                    var merged = BuildMerged(existing["value"], gameRef, source, deltaMinutes, lastPlayed, nowIso);
-                    await _client.PutRecordAsync(StatsCollection, cfg.StatsRkey, merged).ConfigureAwait(false);
-                    return $"at://{_client.Did}/{StatsCollection}/{cfg.StatsRkey}";
-                }
-                _log.Warn($"cached statsRkey {cfg.StatsRkey} missing on PDS — creating a new one");
-            }
-
-            var created = BuildMerged(null, gameRef, source, deltaMinutes, lastPlayed, nowIso);
-            return await CreateAndCacheAsync(created).ConfigureAwait(false);
-        }
-
-        private async Task<string> CreateAndCacheAsync(JsonObject record)
-        {
-            var uri = await _client.CreateRecordAsync(StatsCollection, record).ConfigureAwait(false);
-            _config.Core.StatsRkey = uri.Substring(uri.LastIndexOf('/') + 1);
-            _config.Save();
-            return uri;
+            var existing = await _client.GetRecordAsync(StatsCollection, rkey).ConfigureAwait(false);
+            var merged = BuildMerged(existing?["value"], game, source, MinutesFor(durationSeconds), lastPlayed, nowIso);
+            await _client.PutRecordAsync(StatsCollection, rkey, merged).ConfigureAwait(false);
+            return Uri(did, rkey);
         }
 
         /// <summary>Whole minutes for a play, floored but never below 1 (a sub-minute play still counts).</summary>
@@ -101,12 +63,12 @@ namespace ByJP.AtprotoGaming.Core
         /// with one play's delta. <c>playtime</c> accumulates; <c>lastPlayed</c>
         /// takes the later ISO timestamp; <c>createdAt</c> is preserved.
         /// </summary>
-        internal static JsonObject BuildMerged(JsonNode? priorValue, JsonNode gameRef, string source,
+        internal static JsonObject BuildMerged(JsonNode? priorValue, string game, string source,
             int deltaMinutes, string lastPlayed, string nowIso)
         {
-            int priorPlaytime = 0;
-            string createdAt = nowIso;
-            string priorLastPlayed = "";
+            var priorPlaytime = 0;
+            var createdAt = nowIso;
+            var priorLastPlayed = "";
             if (priorValue is JsonObject value)
             {
                 priorPlaytime = value["playtime"]?.GetValue<int>() ?? 0;
@@ -119,7 +81,7 @@ namespace ByJP.AtprotoGaming.Core
             return new JsonObject
             {
                 ["$type"] = StatsCollection,
-                ["game"] = gameRef.DeepClone(),
+                ["game"] = new JsonObject { ["uri"] = game },
                 ["source"] = source,
                 ["playtime"] = priorPlaytime + deltaMinutes,
                 ["lastPlayed"] = newest,
@@ -127,6 +89,6 @@ namespace ByJP.AtprotoGaming.Core
             };
         }
 
-        private string NowIso() => _clock.UtcNow.ToUniversalTime().ToString("o");
+        private static string Uri(string did, string rkey) => $"at://{did}/{StatsCollection}/{rkey}";
     }
 }

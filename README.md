@@ -74,17 +74,17 @@ You assemble the record body (a `System.Text.Json.Nodes.JsonObject`) against the
 using System.Text.Json.Nodes;
 
 const string PlayCollection = "games.gamesgamesgamesgames.actor.play";
-var gameRef = new JsonObject { ["uri"] = "at://did:web:gamesgamesgamesgames.games/games.gamesgamesgamesgames.game/3mglj4k2edl2l" };
+const string game = "at://did:web:gamesgamesgamesgames.games/games.gamesgamesgamesgames.game/3mglj4k2edl2l";
 
 string rkey = Tid.FromPlayThrough(startedAtUnixSeconds, runSeed);   // runSeed: ulong or string
 
 // `stats` is required by the lexicon — get/create the rolling-stats record up front.
-string statsUri = await atproto.Stats.EnsureAsync(gameRef, source: "steam");
+string statsUri = await atproto.Stats.EnsureAsync(game, StatsSource.Steam);
 
 var play = new JsonObject
 {
     ["$type"]     = PlayCollection,
-    ["game"]      = gameRef["uri"]!.DeepClone(),
+    ["game"]      = game,
     ["stats"]     = statsUri,
     ["startedAt"] = startedAtIso,
     ["updatedAt"] = startedAtIso,
@@ -108,11 +108,53 @@ play["endedAt"]  = endedAtIso;
 play["duration"] = durationSeconds;
 ((JsonObject)play["progress"]!)["outcome"] = new JsonObject { ["type"] = "failed", ["cause"] = "bygone-effigy" };
 
-await atproto.Stats.EnsureAndUpdateAsync(gameRef, "steam", durationSeconds, endedAtIso);  // adds minutes, bumps lastPlayed
+await atproto.Stats.EnsureAndUpdateAsync(game, StatsSource.Steam, durationSeconds, endedAtIso);  // adds minutes, bumps lastPlayed
 await atproto.Records.PutAsync(PlayCollection, rkey, play);
 ```
 
 `PutAsync` returns a `PutResult` (`Published` / `Queued` / `Dropped`). On game crash, anything already queued is on disk and flushes next launch — there is no shutdown ceremony.
+
+### Higher-level: declare what changed (transactional, optimistic locking)
+
+The calls above hand over the *whole* record each time. If you'd rather declare
+**changes** — "score is now N", "item acquired", "finished" — open a `PlaySession`
+and batch them like a database transaction: `BeginUpdate`, record changes (in
+memory, no network), then `CommitAsync` to write them all in **one** optimistic
+read-modify-write (compare-and-swap on the record's CID, refetching and
+re-applying if it changed elsewhere, queueing if offline).
+
+```csharp
+var play = atproto.OpenPlay(
+    // a stable id: derive a TID from start time + run seed, or pass your own save-slot id
+    playId: PlaySession.DerivePlayID(DateTimeOffset.UtcNow, runSeed),
+    game: "at://did:web:gamesgamesgamesgames.games/games.gamesgamesgamesgames.game/3mglj4k2edl2l",
+    gameVersion: "0.107.0",
+    source: StatsSource.Steam,
+    additionalVersions: new Dictionary<string, string> { ["my-mod"] = "1.2.3" });
+// startedAt is captured now and written on create; stats is resolved/inserted at write time.
+
+// A transaction gathers changes (in memory) across many event handlers / frames…
+// The first commit creates the record from the seed if it doesn't exist yet.
+var tx = play.BeginUpdate();
+tx.SetProgress("score", 1234)                                    // values convert implicitly
+  .IncrementProgress("kills", 1)                                 // int-only, fails otherwise
+  .SetProgress("gold", new JsonObject { ["earned"] = 12, ["spent"] = 4 })  // nested values too
+  .AddAcquisition(new JsonObject { ["id"] = "relic.cracked_core", ["kind"] = "relic" })
+  .AddRouteStop(new JsonObject { ["id"] = "boss:effigy", ["name"] = "Bygone Effigy" });
+// …then flush them as a single record write at, say, end of stage:
+await tx.CommitAsync();   // one PUT, updatedAt bumped once
+
+// At the end of the run — another transaction:
+var final = play.BeginUpdate();
+final.SetOutcome("failed", "effigy");
+final.Finish(endedAtIso, durationSeconds);   // also call Stats.EnsureAndUpdateAsync at the end
+await final.CommitAsync();
+```
+
+Helper calls are synchronous and just record the change; nothing reaches the PDS
+until `CommitAsync` (one PUT per commit). The `seed` creates the record on the
+first commit (or while offline). For records other than the play lexicon, drop to
+the generic editor: `atproto.Records.Edit(collection, rkey, seed).ApplyAsync(r => …)`.
 
 ### Optional extras
 

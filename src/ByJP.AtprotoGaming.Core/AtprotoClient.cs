@@ -63,24 +63,37 @@ namespace ByJP.AtprotoGaming.Core
             ApplyTokens(body!);
         }
 
-        public async Task<string> CreateRecordAsync(string collection, JsonNode record)
+        public async Task<WriteResult> CreateRecordAsync(string collection, JsonNode record)
         {
             await EnsureFreshAsync().ConfigureAwait(false);
             var body = await SendForJsonAsync(() => Post(
                 "com.atproto.repo.createRecord",
                 new { repo = _did, collection, record })).ConfigureAwait(false);
-            return body?["uri"]?.GetValue<string>()
-                   ?? throw new AtprotoTransientException("createRecord returned no uri");
+            return ReadWriteResult(body, "createRecord");
         }
 
-        public async Task<string> PutRecordAsync(string collection, string rkey, JsonNode record)
+        /// <param name="swapRecord">
+        /// Optional optimistic-lock guard: the CID the record is expected to have.
+        /// When set, the PDS applies the write only if it still matches, otherwise
+        /// it rejects with <c>InvalidSwap</c> (a 4xx <see cref="AtprotoPermanentException"/>).
+        /// </param>
+        public async Task<WriteResult> PutRecordAsync(string collection, string rkey, JsonNode record, string? swapRecord = null)
         {
             await EnsureFreshAsync().ConfigureAwait(false);
             var body = await SendForJsonAsync(() => Post(
                 "com.atproto.repo.putRecord",
-                new { repo = _did, collection, rkey, record })).ConfigureAwait(false);
-            return body?["uri"]?.GetValue<string>()
-                   ?? throw new AtprotoTransientException("putRecord returned no uri");
+                swapRecord == null
+                    ? (object)new { repo = _did, collection, rkey, record }
+                    : new { repo = _did, collection, rkey, record, swapRecord })).ConfigureAwait(false);
+            return ReadWriteResult(body, "putRecord");
+        }
+
+        private static WriteResult ReadWriteResult(JsonNode? body, string op)
+        {
+            var uri = body?["uri"]?.GetValue<string>()
+                      ?? throw new AtprotoTransientException($"{op} returned no uri");
+            var cid = body?["cid"]?.GetValue<string>() ?? "";
+            return new WriteResult(uri, cid);
         }
 
         /// <summary>Fetches a record. Returns null on 4xx (e.g. not found); throws on transient failure.</summary>
@@ -254,8 +267,27 @@ namespace ByJP.AtprotoGaming.Core
             catch { /* best-effort */ }
 
             if (code >= 400 && code < 500)
-                throw new AtprotoPermanentException(code, errBody);
+            {
+                var (name, message) = ParseXrpcError(errBody);
+                throw new AtprotoPermanentException(code, message ?? errBody, name);
+            }
             throw new AtprotoTransientException($"PDS returned HTTP {code}", code);
+        }
+
+        // XRPC errors are { "error": "<Name>", "message": "<text>" }. Best-effort —
+        // a non-JSON body just yields (null, null) and the raw body is surfaced.
+        private static (string? name, string? message) ParseXrpcError(string? body)
+        {
+            if (string.IsNullOrEmpty(body)) return (null, null);
+            try
+            {
+                var node = JsonNode.Parse(body!);
+                return (node?["error"]?.GetValue<string>(), node?["message"]?.GetValue<string>());
+            }
+            catch
+            {
+                return (null, null);
+            }
         }
 
         private static async Task<JsonNode?> ReadJsonAsync(HttpResponseMessage res)
