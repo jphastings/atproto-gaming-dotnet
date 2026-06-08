@@ -10,14 +10,14 @@ namespace ByJP.AtprotoGaming.Core.Signing
     /// </summary>
     internal static class EcdsaP256
     {
-        public static ECDsa CreateSigner(byte[] privateScalar)
+        public static ECDsa CreateSigner(DidKey privateKey)
         {
-            var (x, y) = P256.MultiplyG(privateScalar);
+            var (x, y) = privateKey.PublicPoint(); // cached — no per-sign scalar multiply
             var ecdsa = ECDsa.Create();
             ecdsa.ImportParameters(new ECParameters
             {
                 Curve = ECCurve.NamedCurves.nistP256,
-                D = privateScalar,
+                D = privateKey.RawBytes,
                 Q = new ECPoint { X = x, Y = y },
             });
             return ecdsa;

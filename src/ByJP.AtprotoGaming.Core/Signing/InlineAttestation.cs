@@ -40,7 +40,7 @@ namespace ByJP.AtprotoGaming.Core.Signing
             var cidStr = Cid.ToStringForm(cidBin);
 
             byte[] sig;
-            using (var ecdsa = EcdsaP256.CreateSigner(privateKey.RawBytes))
+            using (var ecdsa = EcdsaP256.CreateSigner(privateKey))
             {
                 // The base SignData overload returns the IEEE P1363 r‖s
                 // concatenation on netstandard2.0 — 64 bytes for P-256.

@@ -102,6 +102,26 @@ public class SigningTests
     }
 
     [Fact]
+    public void RepeatedSignsWithOneKeyAllVerify()
+    {
+        // The public point is cached on the key after the first use; signing many
+        // records must keep producing valid, independently-verifying signatures.
+        var key = NewKey();
+        var signer = new RecordSigner(SigningKey.FromDidKey(key.PrivateDidKey, "t#a"));
+        using var verifier = EcdsaP256.CreateVerifier(key.Qx, key.Qy);
+
+        for (int i = 0; i < 5; i++)
+        {
+            var record = new JsonObject { ["$type"] = "t", ["i"] = i };
+            signer.Sign(record, "did:plc:repo");
+            var att = (JsonObject)((JsonArray)record["signatures"]!)[0]!;
+            var cidBin = ContentCid.ComputeBinary(record, att, "did:plc:repo");
+            var sig = Convert.FromBase64String(att["signature"]!["$bytes"]!.GetValue<string>());
+            Assert.True(verifier.VerifyData(cidBin, sig, HashAlgorithmName.SHA256), $"sign #{i} failed to verify");
+        }
+    }
+
+    [Fact]
     public void RoundTripsPrivateDidKeyThroughParse()
     {
         var key = NewKey();
