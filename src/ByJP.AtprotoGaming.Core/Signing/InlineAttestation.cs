@@ -68,7 +68,7 @@ namespace ByJP.AtprotoGaming.Core.Signing
             arr.Add(attestation);
         }
 
-        private static void NormalizeLowS(byte[] sig)
+        internal static void NormalizeLowS(byte[] sig)
         {
             var sBytes = new byte[32];
             Buffer.BlockCopy(sig, 32, sBytes, 0, 32);

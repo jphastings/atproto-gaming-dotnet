@@ -122,6 +122,45 @@ public class SigningTests
     }
 
     [Fact]
+    public void NormalizeLowSFlipsHighSLeavesLowSAndPreservesR()
+    {
+        // Deterministically exercise both branches of low-S normalization (the
+        // end-to-end SignatureIsLowS test only hits the high-S path ~50% of runs).
+        var n = System.Numerics.BigInteger.Parse(
+            "0FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551",
+            System.Globalization.NumberStyles.HexNumber);
+        var halfN = n >> 1;
+
+        // High-S: s = n-1 (> n/2) → normalized to n-(n-1) = 1; r left intact.
+        var high = MakeSig(rFill: 0xAB, s: n - 1);
+        InlineAttestation.NormalizeLowS(high);
+        Assert.Equal(System.Numerics.BigInteger.One, SOf(high));
+        Assert.True(SOf(high) <= halfN);
+        Assert.Equal((byte)0xAB, high[0]);
+        Assert.Equal((byte)0xAB, high[31]);
+
+        // Low-S: s = 2 (< n/2) → unchanged.
+        var low = MakeSig(rFill: 0xCD, s: 2);
+        InlineAttestation.NormalizeLowS(low);
+        Assert.Equal(new System.Numerics.BigInteger(2), SOf(low));
+    }
+
+    private static byte[] MakeSig(byte rFill, System.Numerics.BigInteger s)
+    {
+        var sig = new byte[64];
+        for (int i = 0; i < 32; i++) sig[i] = rFill;
+        Buffer.BlockCopy(BigIntBytes.ToUnsignedBigEndian(s, 32), 0, sig, 32, 32);
+        return sig;
+    }
+
+    private static System.Numerics.BigInteger SOf(byte[] sig)
+    {
+        var s = new byte[32];
+        Buffer.BlockCopy(sig, 32, s, 0, 32);
+        return BigIntBytes.FromUnsignedBigEndian(s);
+    }
+
+    [Fact]
     public void RoundTripsPrivateDidKeyThroughParse()
     {
         var key = NewKey();
