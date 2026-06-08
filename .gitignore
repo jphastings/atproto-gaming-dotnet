@@ -6,6 +6,11 @@ obj/
 # Test results
 [Tt]est[Rr]esults/
 
+# DocFX generated output (api/*.yml are extracted from source at build time)
+docs/_site/
+docs/api/*.yml
+docs/api/.manifest
+
 # Local config written at runtime
 config.json
 outbox/
