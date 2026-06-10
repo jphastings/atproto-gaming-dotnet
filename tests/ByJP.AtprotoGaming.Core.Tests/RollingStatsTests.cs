@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 using ByJP.AtprotoGaming.Core;
 using Xunit;
 
@@ -68,5 +69,75 @@ public class RollingStatsTests
 
         Assert.Equal(105, merged["playtime"]!.GetValue<int>());
         Assert.Equal("2026-06-07T11:30:00Z", merged["lastPlayed"]!.GetValue<string>()); // unchanged
+    }
+
+    [Fact]
+    public void BuildWithAchievementsSetsCountsAndPreservesPlaytime()
+    {
+        var prior = new JsonObject
+        {
+            ["playtime"] = 90,
+            ["lastPlayed"] = "2026-06-07T10:00:00Z",
+            ["createdAt"] = "2026-06-01T09:00:00Z",
+        };
+        var rec = RollingStats.BuildWithAchievements(prior, Game, "steam", 12, 50, "2026-06-07T12:00:00Z");
+
+        Assert.Equal(12, rec["achievements"]!["unlocked"]!.GetValue<int>());
+        Assert.Equal(50, rec["achievements"]!["total"]!.GetValue<int>());
+        Assert.Equal(90, rec["playtime"]!.GetValue<int>());                       // preserved
+        Assert.Equal("2026-06-01T09:00:00Z", rec["createdAt"]!.GetValue<string>()); // preserved
+    }
+
+    [Fact]
+    public void BuildMergedPreservesAchievements()
+    {
+        // A playtime update must not wipe achievement counts (and vice versa).
+        var prior = new JsonObject
+        {
+            ["playtime"] = 10,
+            ["achievements"] = new JsonObject { ["unlocked"] = 3, ["total"] = 20 },
+        };
+        var rec = RollingStats.BuildMerged(prior, Game, "steam", 5, "2026-06-07T11:00:00Z", "2026-06-07T12:00:00Z");
+
+        Assert.Equal(15, rec["playtime"]!.GetValue<int>());
+        Assert.Equal(3, rec["achievements"]!["unlocked"]!.GetValue<int>());
+    }
+
+    [Theory]
+    [InlineData(12, 50, true)]
+    [InlineData(13, 50, false)]
+    [InlineData(12, 51, false)]
+    public void AchievementsUnchangedComparesBothCounts(int unlocked, int total, bool expected)
+    {
+        var prior = new JsonObject { ["achievements"] = new JsonObject { ["unlocked"] = 12, ["total"] = 50 } };
+        Assert.Equal(expected, RollingStats.AchievementsUnchanged(prior, unlocked, total));
+    }
+
+    [Fact]
+    public void AchievementsUnchangedIsFalseWhenAbsent() =>
+        Assert.False(RollingStats.AchievementsUnchanged(new JsonObject(), 0, 0));
+
+    [Fact]
+    public async Task AchievementsUnlockedSetsCountsAndKeepsPlaytime()
+    {
+        using var h = await Harness.OnlineAsync();
+        await h.Stats.EnsureAndUpdateAsync(Game, "steam", 600, "2026-06-07T12:00:00Z"); // playtime 10
+        var uri = await h.Stats.AchievementsUnlockedAsync(Game, "steam", 12, 50);
+
+        var rkey = uri.Substring(uri.LastIndexOf('/') + 1);
+        var rec = (JsonObject)h.Pds.Stored(RollingStats.StatsCollection, rkey)!.Value.value;
+        Assert.Equal(12, rec["achievements"]!["unlocked"]!.GetValue<int>());
+        Assert.Equal(50, rec["achievements"]!["total"]!.GetValue<int>());
+        Assert.Equal(10, rec["playtime"]!.GetValue<int>()); // preserved across the achievements write
+    }
+
+    [Fact]
+    public async Task AchievementsUnlockedSkipsTheWriteWhenUnchanged()
+    {
+        using var h = await Harness.OnlineAsync();
+        await h.Stats.AchievementsUnlockedAsync(Game, "steam", 12, 50);
+        var puts = h.Pds.PutCount;
+        await h.Stats.AchievementsUnlockedAsync(Game, "steam", 12, 50); // re-fire, identical counts
+        Assert.Equal(puts, h.Pds.PutCount);
     }
 }
