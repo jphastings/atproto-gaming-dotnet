@@ -73,8 +73,8 @@ namespace ByJP.AtprotoGaming.Core
 
         /// <summary>
         /// Builds a forked <see cref="PlaySession"/>: a new record whose seed is a
-        /// clone of <paramref name="parentValue"/> with <c>forkedFrom</c> pointing at
-        /// the parent and the terminal markers stripped.
+        /// verbatim clone of <paramref name="parentValue"/> with <c>forkedFrom</c>
+        /// pointing at the parent. (The caller guarantees the parent isn't ended.)
         /// </summary>
         public PlaySession Fork(string parentRkey, JsonObject parentValue, string? parentCid, string? newId, string source)
         {
@@ -93,10 +93,7 @@ namespace ByJP.AtprotoGaming.Core
             JsonObject Seed()
             {
                 var clone = (JsonObject)parentValue.DeepClone();
-                clone.Remove("signatures");
-                clone.Remove("endedAt");
-                clone.Remove("duration");
-                if (clone["progress"] is JsonObject progress) progress.Remove("outcome");
+                clone.Remove("signatures"); // re-attested for the new record at write time
                 clone["forkedFrom"] = forkedFrom.DeepClone();
                 return clone;
             }

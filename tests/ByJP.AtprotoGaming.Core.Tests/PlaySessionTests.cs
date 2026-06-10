@@ -188,13 +188,15 @@ public class PlaySessionTests
     }
 
     [Fact]
-    public async Task ForkPlayClonesValuesDropsTerminalMarkersAndLinksParent()
+    public async Task ForkPlayClonesValuesVerbatimAndLinksParent()
     {
         using var h = await Harness.OnlineAsync();
         var play = h.OpenPlay(PlayId, Game, StatsSource.Steam);
 
         var t = play.BeginUpdate();
-        t.SetProgress("score", 42).SetOutcome("failed", "boss").Finish("2026-06-07T12:00:00.0000000Z", 60);
+        t.SetProgress("score", 42)
+         .SetSetting("character", "huntress")
+         .AddAcquisition(new JsonObject { ["id"] = "syringe", ["instanceId"] = "1" });
         await t.CommitAsync();
         var parentCid = h.Pds.Stored(PlaySession.Collection, PlayId)!.Value.cid;
 
@@ -207,13 +209,38 @@ public class PlaySessionTests
         Assert.Equal(PutStatus.Published, (await ft.CommitAsync()).Status);
 
         var rec = (JsonObject)h.Pds.Stored(PlaySession.Collection, forkId)!.Value.value;
-        Assert.Equal(50, rec["progress"]!["score"]!.GetValue<int>());     // cloned then updated
-        Assert.False(rec.ContainsKey("endedAt"));                          // terminal markers dropped
-        Assert.False(rec["progress"]!.AsObject().ContainsKey("outcome"));
+        Assert.Equal(50, rec["progress"]!["score"]!.GetValue<int>());                  // cloned then updated
+        Assert.Equal("huntress", rec["settings"]!["character"]!.GetValue<string>());   // cloned verbatim
+        Assert.Equal("syringe", rec["acquisitions"]![0]!["id"]!.GetValue<string>());   // cloned verbatim
+        Assert.Equal("2026-06-07T11:00:00.0000000Z", rec["startedAt"]!.GetValue<string>()); // original start kept
 
         var forkedFrom = rec["forkedFrom"]!.AsObject();
         Assert.Equal($"at://{FakePds.TestDid}/{PlaySession.Collection}/{PlayId}", forkedFrom["uri"]!.GetValue<string>());
         Assert.Equal(parentCid, forkedFrom["cid"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task ForkingAPlayWithAnOutcomeThrows()
+    {
+        using var h = await Harness.OnlineAsync();
+        var play = h.OpenPlay(PlayId, Game, StatsSource.Steam);
+        var t = play.BeginUpdate();
+        t.SetProgress("score", 1).SetOutcome("failed", "boss");
+        await t.CommitAsync();
+
+        Assert.Throws<InvalidOperationException>(() => play.ForkPlay());
+    }
+
+    [Fact]
+    public async Task ForkingAFinishedPlayThrows()
+    {
+        using var h = await Harness.OnlineAsync();
+        var play = h.OpenPlay(PlayId, Game, StatsSource.Steam);
+        var t = play.BeginUpdate();
+        t.SetProgress("score", 1).Finish("2026-06-07T12:00:00.0000000Z", 60);
+        await t.CommitAsync();
+
+        Assert.Throws<InvalidOperationException>(() => play.ForkPlay());
     }
 
     [Fact]

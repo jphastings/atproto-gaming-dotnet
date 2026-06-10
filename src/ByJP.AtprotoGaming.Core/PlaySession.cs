@@ -63,19 +63,25 @@ namespace ByJP.AtprotoGaming.Core
         public PlayUpdate BeginUpdate() => new PlayUpdate(CommitOpsAsync, _clock);
 
         /// <summary>
-        /// Forks this play into a new record: clones the current values, sets
-        /// <c>forkedFrom</c> to a strongRef of this record, and drops the terminal
-        /// markers (<c>endedAt</c>/<c>duration</c>/<c>outcome</c>) so the fork resumes
-        /// in-progress. Requires this play to have been committed at least once.
+        /// Forks this in-progress play into a new record: clones all current values
+        /// verbatim (so the fork inherits the original's accumulated <c>duration</c>)
+        /// and sets <c>forkedFrom</c> to a strongRef of this record. Requires this
+        /// play to have been committed at least once.
         /// </summary>
         /// <param name="id">
         /// The fork's id; used as-is if a valid record key, otherwise sanitised.
         /// When omitted, a fresh id is derived.
         /// </param>
+        /// <exception cref="InvalidOperationException">
+        /// The play hasn't been committed, or it has ended (has an <c>endedAt</c> or
+        /// an <c>outcome</c>) — an ended play can't be forked.
+        /// </exception>
         public PlaySession ForkPlay(string? id = null)
         {
             if (_value == null)
                 throw new InvalidOperationException("commit the play before forking it");
+            if (_value["endedAt"] is JsonNode || _value["progress"]?["outcome"] is JsonNode)
+                throw new InvalidOperationException("cannot fork an ended play (it has an endedAt or outcome)");
             return _writer.Fork(_rkey, _value, _cid, id, _source);
         }
 
