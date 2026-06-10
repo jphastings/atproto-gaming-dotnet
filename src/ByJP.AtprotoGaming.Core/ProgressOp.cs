@@ -13,10 +13,10 @@ namespace ByJP.AtprotoGaming.Core
         /// <summary>existing - value (absent counts as 0).</summary>
         Subtract,
 
-        /// <summary>min(existing, value); just value if absent. Won't regress a low-water mark.</summary>
+        /// <summary>min(existing, value); just value if absent. Low-water mark (e.g. lowest HP) — never increases it, even if an older queued value flushes late.</summary>
         Min,
 
-        /// <summary>max(existing, value); just value if absent. Protects a high-water mark across out-of-order flushes.</summary>
+        /// <summary>max(existing, value); just value if absent. High-water mark (e.g. highest score) — never decreases it, even if an older queued value flushes late.</summary>
         Max,
     }
 }

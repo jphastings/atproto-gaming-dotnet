@@ -133,6 +133,32 @@ public class PlayOpsTests
     }
 
     [Fact]
+    public void RouteLeaveWithoutInstanceIdMintsNoPhantomOnReapply()
+    {
+        var rec = Apply(new JsonObject(),
+            new JsonObject { ["op"] = "routeArrive", ["id"] = "boss", ["arrivedAt"] = "t1" },
+            new JsonObject { ["op"] = "routeLeave", ["id"] = "boss", ["leftAt"] = "t2" });
+        // Re-apply the same leave (as a CAS retry / offline flush would) — no phantom.
+        Apply(rec, new JsonObject { ["op"] = "routeLeave", ["id"] = "boss", ["leftAt"] = "t3" });
+
+        var route = (JsonArray)rec["progress"]!["route"]!;
+        Assert.Single(route);
+        Assert.Equal("t2", route[0]!["leftAt"]!.GetValue<string>()); // first close stuck; re-apply is a no-op
+    }
+
+    [Fact]
+    public void RouteLeaveWithInstanceIdBeforeArriveMintsTheStop()
+    {
+        var rec = Apply(new JsonObject(),
+            new JsonObject { ["op"] = "routeLeave", ["id"] = "boss", ["instanceId"] = "9", ["leftAt"] = "t2" });
+
+        var route = (JsonArray)rec["progress"]!["route"]!;
+        Assert.Single(route);
+        Assert.Equal("9", route[0]!["instanceId"]!.GetValue<string>());
+        Assert.Equal("t2", route[0]!["leftAt"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void RouteLeaveWithoutInstanceIdClosesTheLastOpenStop()
     {
         var rec = Apply(new JsonObject(),

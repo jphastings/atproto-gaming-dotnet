@@ -125,7 +125,15 @@ namespace ByJP.AtprotoGaming.Core
             var target = instanceId != null
                 ? FindByInstanceId(route, instanceId)
                 : FindLastOpenStop(route, id);
-            (target ?? NewStop(route, op))["leftAt"] = op["leftAt"]!.GetValue<string>();
+
+            if (target != null)
+                target["leftAt"] = op["leftAt"]!.GetValue<string>();
+            else if (instanceId != null)
+                // Explicit leave-before-arrive: the instanceId pins which stop this is.
+                NewStop(route, op)["leftAt"] = op["leftAt"]!.GetValue<string>();
+            // else: no open stop and no instanceId to pin one — nothing to close.
+            // No-op keeps re-apply (CAS retry / offline flush) from minting a phantom
+            // stop with a leftAt but no arrivedAt.
         }
 
         // Appends a fresh routeStop seeded with id (+ instanceId) from the op.
