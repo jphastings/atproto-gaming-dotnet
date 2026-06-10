@@ -53,7 +53,7 @@ namespace ByJP.AtprotoGaming.Core.Analyzers
             var method = invocation.TargetMethod;
             if (method.ContainingType?.ToDisplayString() != PlayUpdateType) return;
 
-            var isProgress = method.Name == "SetProgress" || method.Name == "IncrementProgress";
+            var isProgress = method.Name == "SetProgress" || method.Name == "UpdateProgress";
             var isSetting = method.Name == "SetSetting";
             if (!isProgress && !isSetting) return;
 
@@ -71,7 +71,7 @@ namespace ByJP.AtprotoGaming.Core.Analyzers
 
             if (isProgress && (key == "outcome" || key == "route"))
             {
-                var helper = key == "outcome" ? "SetOutcome(...)" : "AddRouteStop(...)";
+                var helper = key == "outcome" ? "SetOutcome(...)" : "RouteArrive(...)/RouteLeave(...)";
                 context.ReportDiagnostic(Diagnostic.Create(ReservedKeyRule, location, helper, method.Name, key));
                 return; // a reserved key is already an error; don't also nag about casing
             }

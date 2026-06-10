@@ -115,7 +115,7 @@ namespace ByJP.AtprotoGaming.Core
             var startedAt = _clock.UtcNow.ToUniversalTime().ToString("o");
 
             JsonObject Seed() => PlaySession.BuildSeed(game, gameVersion, additionalVersions, startedAt);
-            return new PlaySession(_playWriter, rkey, Seed, source);
+            return new PlaySession(_playWriter, rkey, Seed, source, _clock);
         }
 
         /// <summary>

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using ByJP.AtprotoGaming.Core.Adapters;
 
 namespace ByJP.AtprotoGaming.Core
 {
@@ -10,7 +12,7 @@ namespace ByJP.AtprotoGaming.Core
     /// record. The helper methods record changes as serializable ops in memory (no
     /// network); a single <see cref="CommitAsync"/> writes them all as one record
     /// update. While offline the ops are persisted and re-applied against the real
-    /// record at flush, so an <see cref="IncrementProgress"/> resolves against the
+    /// record at flush, so an <see cref="UpdateProgress"/> resolves against the
     /// actual value rather than a stale one.
     /// </summary>
     /// <remarks>
@@ -21,13 +23,15 @@ namespace ByJP.AtprotoGaming.Core
     public sealed class PlayUpdate
     {
         private readonly Func<JsonArray, Task<PutResult>> _commit;
+        private readonly IClock _clock;
         private readonly object _lock = new object();
         private readonly JsonArray _ops = new JsonArray();
         private bool _committed;
 
-        internal PlayUpdate(Func<JsonArray, Task<PutResult>> commit)
+        internal PlayUpdate(Func<JsonArray, Task<PutResult>> commit, IClock clock)
         {
             _commit = commit;
+            _clock = clock;
         }
 
         /// <summary>Number of changes recorded so far.</summary>
@@ -41,17 +45,42 @@ namespace ByJP.AtprotoGaming.Core
         }
 
         /// <summary>
-        /// Adds <paramref name="delta"/> to an integer <c>progress</c> indicator
-        /// (an absent one counts as 0), resolved against the real value at write
-        /// time. Fails at commit/flush if the existing value isn't an integer.
+        /// Combines <paramref name="value"/> with an integer <c>progress</c> indicator
+        /// using <paramref name="operation"/>, resolved against the real value at
+        /// write time. Fails at commit/flush if the existing value isn't an integer.
         /// </summary>
-        public PlayUpdate IncrementProgress(string name, int delta)
+        public PlayUpdate UpdateProgress(string name, long value, ProgressOp operation)
         {
             GuardProgressName(name);
-            return Record(new JsonObject { ["op"] = "increment", ["name"] = name, ["delta"] = delta });
+            return Record(new JsonObject
+            {
+                ["op"] = "updateProgress",
+                ["name"] = name,
+                ["value"] = value,
+                ["operation"] = operation.ToString().ToLowerInvariant(),
+            });
         }
 
-        /// <summary>Appends an acquired item to <c>acquisitions[]</c> (a <c>#gameItem</c>; <c>id</c> required).</summary>
+        /// <summary>Replaces <c>acquisitions[]</c> with the given items (each a <c>#gameItem</c>; <c>id</c> required).</summary>
+        public PlayUpdate SetAcquisitions(IEnumerable<JsonObject> items)
+        {
+            if (items == null) throw new ArgumentNullException(nameof(items));
+            var array = new JsonArray();
+            foreach (var item in items)
+            {
+                var snap = RequireId(item, "acquisition");
+                EnsureType(snap, PlaySession.GameItemType);
+                array.Add(snap);
+            }
+            return Record(new JsonObject { ["op"] = "setAcquisitions", ["items"] = array });
+        }
+
+        /// <summary>
+        /// Appends an acquired item to <c>acquisitions[]</c> (a <c>#gameItem</c>;
+        /// <c>id</c> required). If the item carries an <c>instanceId</c>, a later add
+        /// with the same <c>instanceId</c> updates that entry instead of duplicating
+        /// it — so a re-emit after a crash is idempotent.
+        /// </summary>
         public PlayUpdate AddAcquisition(JsonObject item)
         {
             var snap = RequireId(item, "acquisition");
@@ -59,12 +88,42 @@ namespace ByJP.AtprotoGaming.Core
             return Record(new JsonObject { ["op"] = "addAcquisition", ["item"] = snap });
         }
 
-        /// <summary>Appends a stop to <c>progress.route[]</c> (a <c>#routeStop</c>; <c>id</c> required).</summary>
-        public PlayUpdate AddRouteStop(JsonObject stop)
+        /// <summary>
+        /// Records arrival at a route stop (appends a <c>#routeStop</c> to
+        /// <c>progress.route[]</c>). An <paramref name="instanceId"/> makes the arrival
+        /// idempotent and lets <see cref="RouteLeave"/> target this exact stop.
+        /// </summary>
+        public PlayUpdate RouteArrive(string id, string? instanceId = null, string? name = null,
+            DateTimeOffset? arrivedAt = null)
         {
-            var snap = RequireId(stop, "route stop");
-            EnsureType(snap, PlaySession.RouteStopType);
-            return Record(new JsonObject { ["op"] = "addRouteStop", ["stop"] = snap });
+            if (string.IsNullOrEmpty(id)) throw new ArgumentNullException(nameof(id));
+            var op = new JsonObject
+            {
+                ["op"] = "routeArrive",
+                ["id"] = id,
+                ["arrivedAt"] = Iso(arrivedAt),
+            };
+            if (instanceId != null) op["instanceId"] = instanceId;
+            if (name != null) op["name"] = name;
+            return Record(op);
+        }
+
+        /// <summary>
+        /// Records leaving a route stop: sets <c>leftAt</c> on the matching open stop
+        /// (by <paramref name="instanceId"/> if given, else the last open stop with
+        /// this <paramref name="id"/>). Resolved against the real record at write time.
+        /// </summary>
+        public PlayUpdate RouteLeave(string id, string? instanceId = null, DateTimeOffset? leftAt = null)
+        {
+            if (string.IsNullOrEmpty(id)) throw new ArgumentNullException(nameof(id));
+            var op = new JsonObject
+            {
+                ["op"] = "routeLeave",
+                ["id"] = id,
+                ["leftAt"] = Iso(leftAt),
+            };
+            if (instanceId != null) op["instanceId"] = instanceId;
+            return Record(op);
         }
 
         /// <summary>Sets <c>progress.outcome</c> (the end-of-play marker).</summary>
@@ -130,6 +189,9 @@ namespace ByJP.AtprotoGaming.Core
             return this;
         }
 
+        private string Iso(DateTimeOffset? when) =>
+            (when ?? _clock.UtcNow).ToUniversalTime().ToString("o", CultureInfo.InvariantCulture);
+
         // progress.outcome and progress.route are structured and have dedicated
         // helpers — steer callers there rather than letting them clobber the shape.
         private static void GuardProgressName(string name)
@@ -138,7 +200,7 @@ namespace ByJP.AtprotoGaming.Core
             if (name == "outcome")
                 throw new ArgumentException("use SetOutcome(...) to set progress.outcome", nameof(name));
             if (name == "route")
-                throw new ArgumentException("use AddRouteStop(...) to add to progress.route", nameof(name));
+                throw new ArgumentException("use RouteArrive(...)/RouteLeave(...) for progress.route", nameof(name));
         }
 
         private static void EnsureType(JsonObject node, string type)

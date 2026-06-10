@@ -42,8 +42,8 @@ public class AnalyzerTests
         VerifyAsync("tx.SetProgress({|BAG002:\"outcome\"|}, 1);");
 
     [Fact]
-    public Task ReservedKeyOnIncrementIsAnError() =>
-        VerifyAsync("tx.IncrementProgress({|BAG002:\"route\"|}, 1);");
+    public Task ReservedKeyOnUpdateProgressIsAnError() =>
+        VerifyAsync("tx.UpdateProgress({|BAG002:\"route\"|}, 1, ProgressOp.Add);");
 
     [Fact]
     public Task NonLiteralKeyIsIgnored() =>

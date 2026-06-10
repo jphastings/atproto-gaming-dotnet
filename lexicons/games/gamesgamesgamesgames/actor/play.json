@@ -26,6 +26,10 @@
 						"format": "at-uri",
 						"description": "AT-URI of the player's `games.gamesgamesgamesgames.actor.stats` record for this game, updated alongside finished runs."
 					},
+					"id": {
+						"type": "string",
+						"description": "An optional ID for this playthrough, used by games with forkable saves to let them find & use the correct record of this lexicon for updates."
+					},
 					"forkedFrom": {
 						"type": "ref",
 						"description": "If the game allows save forking and this record represents progress after a forked save, this should point to the `games.gamesgamesgamesgames.play` record of the previous save.",
@@ -125,6 +129,10 @@
 					"description": "The wall-clock time this item was added to this list, if relevant.",
 					"format": "datetime"
 				},
+				"instanceId": {
+					"type": "string",
+					"description": "An optional unique identifier, eg. a uuid, for this specific instance of this item. Will prevent accidental duplicate items due to game crashes, and allow updates to specific entries if there are more than one of the same."
+				},
 				"extra": {
 					"type": "array",
 					"items": {
@@ -220,15 +228,19 @@
 					"type": "string",
 					"description": "Human-readable display name, in the locale active at write time. Optional, but recommended so renderers without a localised mapping of `id` can fall back to displaying this."
 				},
-				"startedAt": {
+				"arrivedAt": {
 					"type": "string",
 					"format": "datetime",
 					"description": "Wall-clock time the player arrived at this stop."
 				},
-				"endedAt": {
+				"leftAt": {
 					"type": "string",
 					"format": "datetime",
 					"description": "Wall-clock time the player left this stop. Unset while this is the current stop."
+				},
+				"instanceId": {
+					"type": "string",
+					"description": "An optional unique identifier, eg. a uuid, for this specific instance of a route stop. Will prevent accidental duplicate items due to game crashes, and allow updates to specific entries if there are more than one of the same."
 				},
 				"extra": {
 					"type": "array",

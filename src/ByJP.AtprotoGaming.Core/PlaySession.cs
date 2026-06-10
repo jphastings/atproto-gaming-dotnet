@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using ByJP.AtprotoGaming.Core.Adapters;
 
 namespace ByJP.AtprotoGaming.Core
 {
@@ -27,16 +28,18 @@ namespace ByJP.AtprotoGaming.Core
         private readonly string _rkey;
         private readonly Func<JsonObject> _seed;
         private readonly string _source;
+        private readonly IClock _clock;
 
         private JsonObject? _value; // last-delivered record value (domain shape)
         private string? _cid;       // its CID, for the next optimistic swap
 
-        internal PlaySession(PlayWriter writer, string rkey, Func<JsonObject> seed, string source)
+        internal PlaySession(PlayWriter writer, string rkey, Func<JsonObject> seed, string source, IClock clock)
         {
             _writer = writer;
             _rkey = rkey;
             _seed = seed;
             _source = source;
+            _clock = clock;
         }
 
         /// <summary>The play's record key.</summary>
@@ -57,7 +60,24 @@ namespace ByJP.AtprotoGaming.Core
         /// update. Nothing is delivered until commit; the first commit creates the
         /// record (from the seed) if it doesn't exist yet.
         /// </summary>
-        public PlayUpdate BeginUpdate() => new PlayUpdate(CommitOpsAsync);
+        public PlayUpdate BeginUpdate() => new PlayUpdate(CommitOpsAsync, _clock);
+
+        /// <summary>
+        /// Forks this play into a new record: clones the current values, sets
+        /// <c>forkedFrom</c> to a strongRef of this record, and drops the terminal
+        /// markers (<c>endedAt</c>/<c>duration</c>/<c>outcome</c>) so the fork resumes
+        /// in-progress. Requires this play to have been committed at least once.
+        /// </summary>
+        /// <param name="id">
+        /// The fork's id; used as-is if a valid record key, otherwise sanitised.
+        /// When omitted, a fresh id is derived.
+        /// </param>
+        public PlaySession ForkPlay(string? id = null)
+        {
+            if (_value == null)
+                throw new InvalidOperationException("commit the play before forking it");
+            return _writer.Fork(_rkey, _value, _cid, id, _source);
+        }
 
         private async Task<PutResult> CommitOpsAsync(JsonArray ops)
         {

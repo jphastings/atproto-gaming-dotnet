@@ -71,6 +71,39 @@ namespace ByJP.AtprotoGaming.Core
             }
         }
 
+        /// <summary>
+        /// Builds a forked <see cref="PlaySession"/>: a new record whose seed is a
+        /// clone of <paramref name="parentValue"/> with <c>forkedFrom</c> pointing at
+        /// the parent and the terminal markers stripped.
+        /// </summary>
+        public PlaySession Fork(string parentRkey, JsonObject parentValue, string? parentCid, string? newId, string source)
+        {
+            var did = _auth.Did;
+            if (string.IsNullOrEmpty(did))
+                throw new InvalidOperationException("cannot fork a play before the player's identity is known");
+
+            var parentUri = $"at://{did}/{PlaySession.Collection}/{parentRkey}";
+            var cid = parentCid ?? StrongRef.ComputeCid(parentValue);
+            var forkedFrom = StrongRef.Create(parentUri, cid);
+
+            var newRkey = string.IsNullOrEmpty(newId)
+                ? RecordKey.Sanitize(Tid.FromPlayThrough(_clock.UnixSeconds, parentRkey))
+                : RecordKey.Sanitize(newId!);
+
+            JsonObject Seed()
+            {
+                var clone = (JsonObject)parentValue.DeepClone();
+                clone.Remove("signatures");
+                clone.Remove("endedAt");
+                clone.Remove("duration");
+                if (clone["progress"] is JsonObject progress) progress.Remove("outcome");
+                clone["forkedFrom"] = forkedFrom.DeepClone();
+                return clone;
+            }
+
+            return new PlaySession(this, newRkey, Seed, source, _clock);
+        }
+
         /// <summary>Delivers every queued play for the current DID (call at login / after a commit).</summary>
         public async Task FlushAsync()
         {

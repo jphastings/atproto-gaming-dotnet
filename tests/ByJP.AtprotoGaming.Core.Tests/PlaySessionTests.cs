@@ -20,9 +20,9 @@ public class PlaySessionTests
 
         var tx = play.BeginUpdate();
         tx.SetProgress("score", 1234)
-          .IncrementProgress("kills", 3)
+          .UpdateProgress("kills", 3, ProgressOp.Add)
           .AddAcquisition(new JsonObject { ["id"] = "relic.cracked_core", ["kind"] = "relic" })
-          .AddRouteStop(new JsonObject { ["id"] = "boss:effigy" })
+          .RouteArrive("boss:effigy")
           .SetOutcome("failed", "effigy")
           .Finish("2026-06-07T12:00:00.0000000Z", 2837);
         var result = await tx.CommitAsync();
@@ -103,7 +103,7 @@ public class PlaySessionTests
         var play = h.OpenPlay(PlayId, Game, StatsSource.Steam);
 
         var t1 = play.BeginUpdate();
-        t1.IncrementProgress("kills", 5);
+        t1.UpdateProgress("kills", 5, ProgressOp.Add);
         await t1.CommitAsync();                                   // stored kills = 5
 
         // Another writer pushes kills to 100 (and bumps the CID).
@@ -112,7 +112,7 @@ public class PlaySessionTests
         // Go offline, increment by 3 — queued, not written.
         h.Auth.Set(AuthStatus.Offline, did: FakePds.TestDid);
         var t2 = play.BeginUpdate();
-        t2.IncrementProgress("kills", 3);
+        t2.UpdateProgress("kills", 3, ProgressOp.Add);
         var offline = await t2.CommitAsync();
         Assert.Equal(PutStatus.Queued, offline.Status);
 
@@ -152,7 +152,7 @@ public class PlaySessionTests
         var tx = h.OpenPlay(PlayId, Game, StatsSource.Steam).BeginUpdate();
         Assert.Throws<ArgumentException>(() => tx.SetProgress("outcome", 1));
         Assert.Throws<ArgumentException>(() => tx.SetProgress("route", 1));
-        Assert.Throws<ArgumentException>(() => tx.IncrementProgress("route", 1));
+        Assert.Throws<ArgumentException>(() => tx.UpdateProgress("route", 1, ProgressOp.Add));
     }
 
     [Fact]
@@ -185,5 +185,42 @@ public class PlaySessionTests
 
         var additional = (JsonArray)h.Pds.Stored(PlaySession.Collection, Rkey)!.Value.value["versions"]!["additional"]!;
         Assert.Contains(additional, e => e!["name"]!.GetValue<string>() == VersionsInjector.PackageName);
+    }
+
+    [Fact]
+    public async Task ForkPlayClonesValuesDropsTerminalMarkersAndLinksParent()
+    {
+        using var h = await Harness.OnlineAsync();
+        var play = h.OpenPlay(PlayId, Game, StatsSource.Steam);
+
+        var t = play.BeginUpdate();
+        t.SetProgress("score", 42).SetOutcome("failed", "boss").Finish("2026-06-07T12:00:00.0000000Z", 60);
+        await t.CommitAsync();
+        var parentCid = h.Pds.Stored(PlaySession.Collection, PlayId)!.Value.cid;
+
+        const string forkId = "3kforkkey0000";
+        var fork = play.ForkPlay(forkId);
+        Assert.Equal(forkId, fork.Rkey);
+
+        var ft = fork.BeginUpdate();
+        ft.SetProgress("score", 50);
+        Assert.Equal(PutStatus.Published, (await ft.CommitAsync()).Status);
+
+        var rec = (JsonObject)h.Pds.Stored(PlaySession.Collection, forkId)!.Value.value;
+        Assert.Equal(50, rec["progress"]!["score"]!.GetValue<int>());     // cloned then updated
+        Assert.False(rec.ContainsKey("endedAt"));                          // terminal markers dropped
+        Assert.False(rec["progress"]!.AsObject().ContainsKey("outcome"));
+
+        var forkedFrom = rec["forkedFrom"]!.AsObject();
+        Assert.Equal($"at://{FakePds.TestDid}/{PlaySession.Collection}/{PlayId}", forkedFrom["uri"]!.GetValue<string>());
+        Assert.Equal(parentCid, forkedFrom["cid"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void ForkBeforeCommitThrows()
+    {
+        using var h = Harness.Offline();
+        var play = h.OpenPlay(PlayId, Game, StatsSource.Steam);
+        Assert.Throws<InvalidOperationException>(() => play.ForkPlay());
     }
 }

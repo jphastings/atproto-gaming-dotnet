@@ -179,6 +179,7 @@ internal sealed class FakePds : HttpMessageHandler
 internal sealed class Harness : IDisposable
 {
     public FakePds Pds { get; } = new();
+    public FixedClock Clock { get; } = new();
     public AuthState Auth { get; } = new();
     public CapturingLogSink Log { get; } = new();
     public TempFileSystem Fs { get; } = new();
@@ -194,7 +195,7 @@ internal sealed class Harness : IDisposable
     private Harness(SigningKey? signingKey)
     {
         _http = new HttpClient(Pds);
-        var clock = new FixedClock();
+        var clock = Clock;
         Client = new AtprotoClient(Auth, clock, Log, _http);
         Outbox = new Outbox(Fs, Log, Auth, Client);
         var versions = new VersionsInjector("9.9.9");
@@ -214,7 +215,7 @@ internal sealed class Harness : IDisposable
         var rkey = RecordKey.Sanitize(playId);
         System.Text.Json.Nodes.JsonObject Seed() =>
             PlaySession.BuildSeed(game, "1.0.0", mods, "2026-06-07T11:00:00.0000000Z");
-        return new PlaySession(PlayWriter, rkey, Seed, source);
+        return new PlaySession(PlayWriter, rkey, Seed, source, Clock);
     }
 
     public static async Task<Harness> OnlineAsync(SigningKey? signingKey = null)
