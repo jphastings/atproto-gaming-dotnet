@@ -6,8 +6,10 @@ on:
     paths: ['src/ByJP.AtprotoGaming.Core/ByJP.AtprotoGaming.Core.csproj'] # publish on a <Version> change
   workflow_dispatch:
 
+# Trusted Publishing: mint a short-lived nuget.org key via OIDC — no stored API key.
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   publish:
@@ -28,19 +30,21 @@ jobs:
           dotnet pack src/ByJP.AtprotoGaming.Core/ByJP.AtprotoGaming.Core.csproj \
             -c Release -p:ContinuousIntegrationBuild=true -o artifacts
 
-      # nuget.org versions are immutable; --skip-duplicate makes a re-run (or a push
-      # that didn't bump <Version>) a harmless no-op. The .snupkg beside the .nupkg is
-      # pushed automatically. Degrades to a warning if the API key isn't set yet.
+      # Exchange the GitHub OIDC token for a 1-hour nuget.org key. Requires a Trusted
+      # Publishing policy on nuget.org (owner=jphastings, repo=atproto-gaming-dotnet,
+      # workflow=publish.yml). `user` is your nuget.org profile name (not your email);
+      # it isn't a credential, just kept out of the file via the NUGET_USER variable.
+      - name: NuGet login (OIDC → temp key)
+        id: login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      # nuget.org versions are immutable; --skip-duplicate makes a re-run (or a push that
+      # didn't bump <Version>) a harmless no-op. The .snupkg beside the .nupkg goes too.
       - name: Push to nuget.org
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
-          if [[ -z "$NUGET_API_KEY" ]]; then
-            echo "::warning::NUGET_API_KEY secret not set — skipping publish (test + pack still ran)."
-            echo "Add it under Settings → Secrets and variables → Actions, then re-run."
-            exit 0
-          fi
           dotnet nuget push "artifacts/*.nupkg" \
-            --api-key "$NUGET_API_KEY" \
+            --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate
