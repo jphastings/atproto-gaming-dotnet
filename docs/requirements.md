@@ -7,11 +7,11 @@ game mod that wants to publish play-throughs to the player's atproto PDS.
 
 Two concrete consumers drive these requirements:
 
-- **me.byjp.pesos.ror2** — a Risk of Rain 2 BepInEx mod. Unity Mono runtime, .NET
+- A Risk of Rain 2 BepInEx mod. Unity Mono runtime, .NET
   Framework 4.7.2 target, MonoMod `On.*` hooks, host-authoritative
   multiplayer over Steam P2P. See
   `../ror2.at/docs/`.
-- **me.byjp.pesos.sts2** — a Slay the Spire 2 mod. Godot.NET runtime, .NET 9 target,
+- A Slay the Spire 2 mod. Godot.NET runtime, .NET 9 target,
   HarmonyX patches, per-client (no host) multiplayer. See
   `../sts2.at/mod/`.
 
