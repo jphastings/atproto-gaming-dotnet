@@ -1,0 +1,46 @@
+name: Publish
+
+on:
+  push:
+    branches: [main]
+    paths: ['src/ByJP.AtprotoGaming.Core/ByJP.AtprotoGaming.Core.csproj'] # publish on a <Version> change
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
+        with:
+          dotnet-version: 9.0.x
+
+      # Don't publish a broken package.
+      - name: Test
+        run: dotnet test ByJP.AtprotoGaming.Core.sln -c Release
+
+      - name: Pack
+        run: |
+          dotnet pack src/ByJP.AtprotoGaming.Core/ByJP.AtprotoGaming.Core.csproj \
+            -c Release -p:ContinuousIntegrationBuild=true -o artifacts
+
+      # nuget.org versions are immutable; --skip-duplicate makes a re-run (or a push
+      # that didn't bump <Version>) a harmless no-op. The .snupkg beside the .nupkg is
+      # pushed automatically. Degrades to a warning if the API key isn't set yet.
+      - name: Push to nuget.org
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if [[ -z "$NUGET_API_KEY" ]]; then
+            echo "::warning::NUGET_API_KEY secret not set — skipping publish (test + pack still ran)."
+            echo "Add it under Settings → Secrets and variables → Actions, then re-run."
+            exit 0
+          fi
+          dotnet nuget push "artifacts/*.nupkg" \
+            --api-key "$NUGET_API_KEY" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate

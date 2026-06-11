@@ -22,9 +22,19 @@
     <Description>Engine-agnostic AT Protocol core for games: XRPC client, identity, auth-state, on-disk outbox, deterministic rkeys, rolling stats, optional ECDSA signing. Drop into a Unity/BepInEx, Godot.NET, or plain .NET game or mod to publish play-throughs to a player's PDS.</Description>
     <PackageTags>atproto;bluesky;gaming;xrpc;pds;modding</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/jphastings/atproto-gaming-dotnet</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jphastings/atproto-gaming-dotnet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <!-- Rendered on the nuget.org package page. -->
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- JsonNode/JsonObject + reflection serialization on ns2.0. -->
