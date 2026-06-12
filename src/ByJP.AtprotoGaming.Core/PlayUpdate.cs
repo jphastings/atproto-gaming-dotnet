@@ -150,9 +150,28 @@ namespace ByJP.AtprotoGaming.Core
             foreach (var participant in participants)
             {
                 if (participant == null) throw new ArgumentException("participant cannot be null", nameof(participants));
+                if (participant.TryGetPropertyValue("steam", out var steam) && steam != null && !IsSteamId64(steam))
+                    throw new ArgumentException(
+                        "participant 'steam' must be a SteamID64 — a 17-digit decimal like 76561197994000231 — " +
+                        $"but got {steam.ToJsonString()}. A SteamID2 (STEAM_X:Y:Z), SteamID3 ([U:1:N]) or bare " +
+                        "32-bit account id is not a SteamID64; convert it first.",
+                        nameof(participants));
                 array.Add((JsonObject)participant.DeepClone());
             }
             return Record(new JsonObject { ["op"] = "setPlayingWith", ["participants"] = array });
+        }
+
+        // Individual SteamID64s are a 17-digit decimal ≥ 76561197960265728. Validating the
+        // shape here catches the easy mistakes (SteamID2/SteamID3/account id) at the call
+        // site, where the consumer can see what went in — not as silent bad data on the PDS.
+        private const ulong MinIndividualSteamId64 = 76561197960265728UL;
+
+        private static bool IsSteamId64(JsonNode steam)
+        {
+            if (!(steam is JsonValue value) || !value.TryGetValue<string>(out var s) || string.IsNullOrEmpty(s))
+                return false;
+            foreach (var c in s) if (c < '0' || c > '9') return false;
+            return ulong.TryParse(s, out var id) && id >= MinIndividualSteamId64;
         }
 
         /// <summary>Marks the play-through finished: sets <c>endedAt</c> and <c>duration</c>.</summary>

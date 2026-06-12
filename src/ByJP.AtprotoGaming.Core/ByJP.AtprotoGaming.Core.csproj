@@ -17,7 +17,7 @@
 
     <!-- NuGet metadata: package id = assembly name = root namespace (NF8). -->
     <PackageId>ByJP.AtprotoGaming.Core</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Authors>JP Hastings-Spital</Authors>
     <Description>Engine-agnostic AT Protocol core for games: XRPC client, identity, auth-state, on-disk outbox, deterministic rkeys, rolling stats, optional ECDSA signing. Drop into a Unity/BepInEx, Godot.NET, or plain .NET game or mod to publish play-throughs to a player's PDS.</Description>
     <PackageTags>atproto;bluesky;gaming;xrpc;pds;modding</PackageTags>

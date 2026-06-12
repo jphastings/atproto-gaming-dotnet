@@ -43,6 +43,36 @@ public class PlaySessionTests
     }
 
     [Fact]
+    public async Task SetPlayingWithRejectsNonSteamId64SteamIds()
+    {
+        using var h = await Harness.OnlineAsync();
+        var tx = h.OpenPlay(PlayId, Game, StatsSource.Steam).BeginUpdate();
+
+        // The mistakes the check exists to catch: SteamID2, SteamID3, bare account id.
+        Assert.Throws<ArgumentException>(() =>
+            tx.SetPlayingWith(new[] { new JsonObject { ["steam"] = "STEAM_1:1:16867251" } }));
+        Assert.Throws<ArgumentException>(() =>
+            tx.SetPlayingWith(new[] { new JsonObject { ["steam"] = "[U:1:33734503]" } }));
+        Assert.Throws<ArgumentException>(() =>
+            tx.SetPlayingWith(new[] { new JsonObject { ["steam"] = "33734503" } }));
+    }
+
+    [Fact]
+    public async Task SetPlayingWithAcceptsSteamId64AndAtprotoOnlyParticipants()
+    {
+        using var h = await Harness.OnlineAsync();
+        var tx = h.OpenPlay(PlayId, Game, StatsSource.Steam).BeginUpdate();
+
+        tx.SetPlayingWith(new[]
+        {
+            new JsonObject { ["steam"] = "76561197994000231", ["atproto"] = "did:plc:abc" },
+            new JsonObject { ["atproto"] = "did:plc:xyz" }, // atproto-only (no steam) is allowed
+        });
+
+        Assert.Equal(1, tx.Count);
+    }
+
+    [Fact]
     public async Task StatsUriIsResolvedAndInsertedAtWrite()
     {
         using var h = await Harness.OnlineAsync();
