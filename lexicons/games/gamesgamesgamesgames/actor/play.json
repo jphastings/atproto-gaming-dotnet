@@ -35,34 +35,38 @@
 						"description": "If the game allows save forking and this record represents progress after a forked save, this should point to the `games.gamesgamesgamesgames.play` record of the previous save.",
 						"ref": "com.atproto.repo.strongRef"
 					},
-					"playingWith": {
+					"participants": {
 						"type": "array",
-						"description": "Other participants in a multiplayer run. Because the rkey is derived consistently across all participants, each entry's record can be fetched easily with `(participantDID, games.gamesgamesgamesgames.actor.run, rkey)`.",
+						"description": "Other participants in a multiplayer run. Because the rkey is derived consistently across all participants, each entry's record can be fetched easily with `(participantDID, games.gamesgamesgamesgames.actor.play, rkey)`.",
 						"items": {
 							"type": "ref",
 							"ref": "#participant"
 						}
 					},
-					"settings": {
-						"type": "ref",
-						"ref": "#settings",
-						"description": "Game-specific run settings (for this player, or global) set before the run begins (e.g. StS2's ascension and chosen character)."
-					},
-					"progress": {
-						"type": "ref",
-						"description": "Game-specific progress indicators, accurate at the `updatedAt` timestamp, and updated as the play-through progresses (e.g. health, gold, kills, score).",
-						"ref": "#progress"
-					},
-					"acquisitions": {
+					"state": {
 						"type": "array",
-						"description": "Notable items the player has acquired during the run, in pickup order. May be a 'meta' unlockable, or an in-run item.",
+						"description": "Typed entries describing this play-through's state: setup, settings, metrics, acquisitions, route, objectives, unlocks and more. Games compose the entry types relevant to them, and may introduce their own via the open union. An entry type's cardinality and merge key are implied by its shape — types declaring both `id` and `instanceId` fields are instanced (unique per ($type, id, instanceId), appended in order); types declaring `id` but not `instanceId` are keyed (unique per ($type, id), upserted by id); types declaring neither are singletons (at most one entry per $type, replaced wholesale). Writers must respect these merge semantics so that concurrent and replayed updates converge.",
 						"items": {
 							"type": "union",
+							"closed": false,
 							"refs": [
-								"#gameItem"
-							],
-							"closed": false
+								"games.gamesgamesgamesgames.state.setup",
+								"games.gamesgamesgamesgames.state.setting",
+								"games.gamesgamesgamesgames.state.metric",
+								"games.gamesgamesgamesgames.state.acquisition",
+								"games.gamesgamesgamesgames.state.routeStop",
+								"games.gamesgamesgamesgames.state.objective",
+								"games.gamesgamesgamesgames.state.unlock",
+								"games.gamesgamesgamesgames.state.discovery",
+								"games.gamesgamesgamesgames.state.partyMember",
+								"games.gamesgamesgamesgames.state.standing"
+							]
 						}
+					},
+					"outcome": {
+						"type": "ref",
+						"description": "How the play-through ended. Unset while the run is still in progress.",
+						"ref": "#outcome"
 					},
 					"startedAt": {
 						"type": "string",
@@ -100,49 +104,6 @@
 				}
 			}
 		},
-		"gameItem": {
-			"type": "object",
-			"description": "A game item (eg. card, weapon, upgrade, etc) containing some generic information. Can be extended with game-specific lexicons.",
-			"required": [
-				"id"
-			],
-			"properties": {
-				"id": {
-					"type": "string",
-					"description": "Stable, game-defined identifier for this item. Language-independent and should be consistent across uses & game versions. Optional conventions include using dot-separation to namespace (eg. `card.silent.strike`) and forward slashes for modifiers (eg. `card.silent.strike/corrupted`)."
-				},
-				"kind": {
-					"type": "string",
-					"description": "The kind of item this is (eg.`card` or `relic`)."
-				},
-				"name": {
-					"type": "string",
-					"description": "Human-readable display name in the locale active at write time. Optional, but recommended so renderers without a localised mapping of `id` can fall back to displaying this. Eg. `Strike (Upgraded, Corrupted)`."
-				},
-				"useCount": {
-					"type": "integer",
-					"minimum": 0,
-					"description": "How many times this item was used during the run (cards played, equipment activated, abilities triggered). Omit for passive items where 'use' isn't a meaningful concept, or when the game doesn't track this."
-				},
-				"addedAt": {
-					"type": "string",
-					"description": "The wall-clock time this item was added to this list, if relevant.",
-					"format": "datetime"
-				},
-				"instanceId": {
-					"type": "string",
-					"description": "An optional unique identifier, eg. a uuid, for this specific instance of this item. Will prevent accidental duplicate items due to game crashes, and allow updates to specific entries if there are more than one of the same."
-				},
-				"extra": {
-					"type": "array",
-					"items": {
-						"type": "union",
-						"description": "Game-specific lexicons that can hold additional information about this item.",
-						"refs": []
-					}
-				}
-			}
-		},
 		"participant": {
 			"type": "object",
 			"description": "Another player observed in a multiplayer run. At least one of `atproto` or `steam` should be set. `atproto` may be backfilled later (e.g. via `dev.keytrace.reverseLookup`) once it can be resolved from the platform id.",
@@ -155,100 +116,6 @@
 				"steam": {
 					"type": "string",
 					"description": "SteamID64 of the participant as a decimal string, when playing on Steam."
-				}
-			}
-		},
-		"settings": {
-			"type": "object",
-			"description": "An open list of attributes set up by the player before a run starts. Named keys should be used when applicable.",
-			"properties": {
-				"mode": {
-					"type": "string",
-					"description": "For games with different modes of play eg. a daily challenge, the stable name of the mode of play."
-				},
-				"seed": {
-					"type": "string",
-					"description": "The play-through's seed, if its using seeded play. Serialised as a string to preserve precision for ulong/large-integer seeds."
-				},
-				"character": {
-					"type": "string",
-					"description": "For games where a character is choosable, the stable identifier of who the player chose for this run."
-				},
-				"difficulty": {
-					"type": "integer",
-					"description": "For games where a difficulty level is choosable. If the difficulty isn't easily mappable to an integer that gets higher with harder difficulty, then ignore this field an use a custom one."
-				},
-				"items": {
-					"type": "array",
-					"description": "Any items applied at the start of this run, particularly 'meta' items unlocked in previous runs.",
-					"items": {
-						"type": "union",
-						"closed": false,
-						"refs": [
-							"#gameItem"
-						]
-					}
-				}
-			}
-		},
-		"progress": {
-			"type": "object",
-			"description": "Open-ended, game-specific progress indicators (e.g. health, gold, kills, score) with a few universal properties that should be used if appropriate.",
-			"properties": {
-				"outcome": {
-					"type": "ref",
-					"description": "How a playthrough ended. Unset while the game is still in progress.",
-					"ref": "#outcome"
-				},
-				"route": {
-					"type": "array",
-					"description": "For games where the route taken involves choices, the stops the player has gone through so far, in order.",
-					"items": {
-						"type": "union",
-						"refs": [
-							"#routeStop"
-						],
-						"closed": false
-					}
-				}
-			}
-		},
-		"routeStop": {
-			"type": "object",
-			"description": "A single stop along the route through a play-through (e.g. a map node, level, region, or encounter). Can be extended with game-specific lexicons.",
-			"required": [
-				"id"
-			],
-			"properties": {
-				"id": {
-					"type": "string",
-					"description": "Stable, game-defined identifier for this stop. Language-independent and should be consistent across play-throughs & game versions if possible."
-				},
-				"name": {
-					"type": "string",
-					"description": "Human-readable display name, in the locale active at write time. Optional, but recommended so renderers without a localised mapping of `id` can fall back to displaying this."
-				},
-				"arrivedAt": {
-					"type": "string",
-					"format": "datetime",
-					"description": "Wall-clock time the player arrived at this stop."
-				},
-				"leftAt": {
-					"type": "string",
-					"format": "datetime",
-					"description": "Wall-clock time the player left this stop. Unset while this is the current stop."
-				},
-				"instanceId": {
-					"type": "string",
-					"description": "An optional unique identifier, eg. a uuid, for this specific instance of a route stop. Will prevent accidental duplicate items due to game crashes, and allow updates to specific entries if there are more than one of the same."
-				},
-				"extra": {
-					"type": "array",
-					"items": {
-						"type": "union",
-						"description": "Game-specific lexicons that can hold additional information about this stop.",
-						"refs": []
-					}
 				}
 			}
 		},

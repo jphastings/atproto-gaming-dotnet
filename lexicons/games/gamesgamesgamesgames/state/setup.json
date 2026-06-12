@@ -1,0 +1,65 @@
+{
+	"lexicon": 1,
+	"id": "games.gamesgamesgamesgames.state.setup",
+	"defs": {
+		"main": {
+			"type": "object",
+			"description": "Pre-run configuration chosen before play begins, for use in a play record's `state` array. Cardinality: singleton — at most one entry of this $type per state array; writers replace the entry wholesale. Items applied at the start of a run (eg. meta unlocks from previous runs) should be `games.gamesgamesgamesgames.state.acquisition` entries with `via` set to `starting`. Game-specific values not covered here should be `games.gamesgamesgamesgames.state.setting` entries.",
+			"properties": {
+				"mode": {
+					"type": "string",
+					"description": "For games with different modes of play (eg. a daily challenge), the stable name of the mode of play."
+				},
+				"seed": {
+					"type": "string",
+					"description": "The play-through's seed, if it's using seeded play. Serialised as a string to preserve precision for ulong/large-integer seeds."
+				},
+				"character": {
+					"type": "string",
+					"description": "For games where a character is choosable, the stable identifier of who the player chose for this run."
+				},
+				"difficulty": {
+					"type": "integer",
+					"description": "For games where a difficulty level is choosable. If the difficulty isn't easily mappable to an integer that gets higher with harder difficulty, ignore this field and use a modifier or a `state.setting` entry instead."
+				},
+				"modifiers": {
+					"type": "array",
+					"description": "Run-wide modifiers active from the start (eg. ascension effects, daily mutators, curses).",
+					"items": {
+						"type": "ref",
+						"ref": "#modifier"
+					}
+				},
+				"extra": {
+					"type": "array",
+					"items": {
+						"type": "union",
+						"description": "Game-specific lexicons that can hold additional setup information.",
+						"refs": []
+					}
+				}
+			}
+		},
+		"modifier": {
+			"type": "object",
+			"description": "A single run-wide modifier active from the start of a play-through.",
+			"required": [
+				"id"
+			],
+			"properties": {
+				"id": {
+					"type": "string",
+					"description": "Stable, game-defined identifier for this modifier. Language-independent and consistent across uses & game versions."
+				},
+				"name": {
+					"type": "string",
+					"description": "Human-readable display name in the locale active at write time. Optional, but recommended so renderers without a localised mapping of `id` can fall back to displaying this."
+				},
+				"value": {
+					"type": "string",
+					"description": "Optional magnitude or parameter for this modifier (eg. an ascension level), serialised as a string."
+				}
+			}
+		}
+	}
+}

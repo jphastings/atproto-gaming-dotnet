@@ -1,0 +1,66 @@
+{
+	"lexicon": 1,
+	"id": "games.gamesgamesgamesgames.state.acquisition",
+	"defs": {
+		"main": {
+			"type": "object",
+			"description": "A notable item (eg. card, weapon, upgrade) the player acquired during a run, for use in a play record's `state` array. Cardinality: instanced — unique per ($type, id, instanceId); writers append in acquisition order and dedupe by `instanceId` when present. Run-scoped possession; for profile-scoped grants earned during the run, use `games.gamesgamesgamesgames.state.unlock` instead.",
+			"required": [
+				"id"
+			],
+			"properties": {
+				"id": {
+					"type": "string",
+					"description": "Stable, game-defined identifier for this item. Language-independent and consistent across uses & game versions. Optional conventions include using dot-separation to namespace (eg. `card.silent.strike`) and forward slashes for modifiers (eg. `card.silent.strike/corrupted`)."
+				},
+				"kind": {
+					"type": "string",
+					"description": "The kind of item this is (eg. `card` or `relic`)."
+				},
+				"name": {
+					"type": "string",
+					"description": "Human-readable display name in the locale active at write time. Optional, but recommended so renderers without a localised mapping of `id` can fall back to displaying this. Eg. `Strike (Upgraded, Corrupted)`."
+				},
+				"via": {
+					"type": "string",
+					"description": "How the item entered the run. `starting` marks items applied before the run began (eg. meta unlocks from previous runs, or a chosen loadout).",
+					"knownValues": [
+						"starting",
+						"pickup",
+						"purchased",
+						"crafted",
+						"reward",
+						"metaUnlock"
+					]
+				},
+				"useCount": {
+					"type": "integer",
+					"minimum": 0,
+					"description": "How many times this item was used during the run (cards played, equipment activated, abilities triggered). Omit for passive items where 'use' isn't a meaningful concept, or when the game doesn't track this."
+				},
+				"addedAt": {
+					"type": "string",
+					"format": "datetime",
+					"description": "The wall-clock time this item was acquired, if relevant."
+				},
+				"lostAt": {
+					"type": "string",
+					"format": "datetime",
+					"description": "The wall-clock time this item left the player's possession (sold, destroyed, consumed). Unset while still held."
+				},
+				"instanceId": {
+					"type": "string",
+					"description": "An optional unique identifier, eg. a uuid, for this specific instance of this item. Will prevent accidental duplicate items due to game crashes, and allow updates to specific entries if there are more than one of the same."
+				},
+				"extra": {
+					"type": "array",
+					"items": {
+						"type": "union",
+						"description": "Game-specific lexicons that can hold additional information about this item.",
+						"refs": []
+					}
+				}
+			}
+		}
+	}
+}

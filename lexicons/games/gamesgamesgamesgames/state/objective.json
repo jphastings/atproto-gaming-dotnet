@@ -1,0 +1,63 @@
+{
+	"lexicon": 1,
+	"id": "games.gamesgamesgamesgames.state.objective",
+	"defs": {
+		"main": {
+			"type": "object",
+			"description": "A quest, mission, bounty, or challenge with a lifecycle, for use in a play record's `state` array. Cardinality: keyed — unique per ($type, id); writers upsert by `id`.",
+			"required": [
+				"id",
+				"status"
+			],
+			"properties": {
+				"id": {
+					"type": "string",
+					"description": "Stable, game-defined identifier for this objective. Language-independent and consistent across play-throughs & game versions."
+				},
+				"name": {
+					"type": "string",
+					"description": "Human-readable display name in the locale active at write time. Optional, but recommended so renderers without a localised mapping of `id` can fall back to displaying this."
+				},
+				"status": {
+					"type": "string",
+					"description": "Where this objective is in its lifecycle.",
+					"knownValues": [
+						"offered",
+						"active",
+						"completed",
+						"failed",
+						"abandoned"
+					]
+				},
+				"current": {
+					"type": "integer",
+					"minimum": 0,
+					"description": "Progress towards `target` for step-counted objectives (eg. 7 of 10 wolves)."
+				},
+				"target": {
+					"type": "integer",
+					"minimum": 0,
+					"description": "The step count at which this objective completes."
+				},
+				"acceptedAt": {
+					"type": "string",
+					"format": "datetime",
+					"description": "Wall-clock time the objective became active."
+				},
+				"resolvedAt": {
+					"type": "string",
+					"format": "datetime",
+					"description": "Wall-clock time the objective reached a terminal status (completed, failed, or abandoned)."
+				},
+				"extra": {
+					"type": "array",
+					"items": {
+						"type": "union",
+						"description": "Game-specific lexicons that can hold additional information about this objective.",
+						"refs": []
+					}
+				}
+			}
+		}
+	}
+}
