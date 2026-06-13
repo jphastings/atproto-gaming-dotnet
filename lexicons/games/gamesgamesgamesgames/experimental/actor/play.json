@@ -1,6 +1,6 @@
 {
 	"lexicon": 1,
-	"id": "games.gamesgamesgamesgames.actor.play",
+	"id": "games.gamesgamesgamesgames.experimental.actor.play",
 	"defs": {
 		"main": {
 			"type": "record",
@@ -32,12 +32,12 @@
 					},
 					"forkedFrom": {
 						"type": "ref",
-						"description": "If the game allows save forking and this record represents progress after a forked save, this should point to the `games.gamesgamesgamesgames.play` record of the previous save.",
+						"description": "If the game allows save forking and this record represents progress after a forked save, this should point to the `games.gamesgamesgamesgames.experimental.actor.play` record of the previous save.",
 						"ref": "com.atproto.repo.strongRef"
 					},
 					"participants": {
 						"type": "array",
-						"description": "Other participants in a multiplayer run. Because the rkey is derived consistently across all participants, each entry's record can be fetched easily with `(participantDID, games.gamesgamesgamesgames.actor.play, rkey)`.",
+						"description": "Other participants in a multiplayer run. Because the rkey is derived consistently across all participants, each entry's record can be fetched easily with `(participantDID, games.gamesgamesgamesgames.experimental.actor.play, rkey)`.",
 						"items": {
 							"type": "ref",
 							"ref": "#participant"
@@ -50,16 +50,16 @@
 							"type": "union",
 							"closed": false,
 							"refs": [
-								"games.gamesgamesgamesgames.state.setup",
-								"games.gamesgamesgamesgames.state.setting",
-								"games.gamesgamesgamesgames.state.metric",
-								"games.gamesgamesgamesgames.state.acquisition",
-								"games.gamesgamesgamesgames.state.routeStop",
-								"games.gamesgamesgamesgames.state.objective",
-								"games.gamesgamesgamesgames.state.unlock",
-								"games.gamesgamesgamesgames.state.discovery",
-								"games.gamesgamesgamesgames.state.partyMember",
-								"games.gamesgamesgamesgames.state.standing"
+								"games.gamesgamesgamesgames.experimental.state.setup",
+								"games.gamesgamesgamesgames.experimental.state.setting",
+								"games.gamesgamesgamesgames.experimental.state.metric",
+								"games.gamesgamesgamesgames.experimental.state.acquisition",
+								"games.gamesgamesgamesgames.experimental.state.routeStop",
+								"games.gamesgamesgamesgames.experimental.state.objective",
+								"games.gamesgamesgamesgames.experimental.state.unlock",
+								"games.gamesgamesgamesgames.experimental.state.discovery",
+								"games.gamesgamesgamesgames.experimental.state.partyMember",
+								"games.gamesgamesgamesgames.experimental.state.standing"
 							]
 						}
 					},

@@ -1,6 +1,6 @@
 {
 	"lexicon": 1,
-	"id": "games.gamesgamesgamesgames.state.partyMember",
+	"id": "games.gamesgamesgamesgames.experimental.state.partyMember",
 	"defs": {
 		"main": {
 			"type": "object",
@@ -28,7 +28,7 @@
 				},
 				"equipment": {
 					"type": "array",
-					"description": "Identifiers of items currently equipped by this member, matching the `id` or `instanceId` of `games.gamesgamesgamesgames.state.acquisition` entries in the same state array.",
+					"description": "Identifiers of items currently equipped by this member, matching the `id` or `instanceId` of `games.gamesgamesgamesgames.experimental.state.acquisition` entries in the same state array.",
 					"items": {
 						"type": "string"
 					}

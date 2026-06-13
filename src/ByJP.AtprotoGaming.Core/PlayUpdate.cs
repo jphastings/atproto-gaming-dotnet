@@ -9,7 +9,7 @@ using ByJP.AtprotoGaming.Core.Adapters;
 namespace ByJP.AtprotoGaming.Core
 {
     /// <summary>
-    /// An open transaction over a <c>games.gamesgamesgamesgames.actor.play</c>
+    /// An open transaction over a <c>games.gamesgamesgamesgames.experimental.actor.play</c>
     /// record. The helper methods record changes as serializable ops in memory (no
     /// network); a single <see cref="CommitAsync"/> writes them all as one record
     /// update. While offline the ops are persisted and re-applied against the real

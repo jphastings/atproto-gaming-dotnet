@@ -35,7 +35,7 @@ already caught a phantom-stop bug here (`routeLeave` minting a stop on re-apply)
 touching `PlayOps`, add a "re-apply twice" test.
 
 Everything player-facing now lives in one open-union **`state[]`** array of typed
-entries (`games.gamesgamesgamesgames.state.*`). Each op carries the entry's `$type`
+entries (`games.gamesgamesgamesgames.experimental.state.*`). Each op carries the entry's `$type`
 and a **merge mode** that mirrors the lexicon's shape-implied cardinality:
 - **singleton** (no `id`/`instanceId`, e.g. `setup`) — replace the lone entry of that `$type`;
 - **keyed** (`id` only, e.g. `metric`/`setting`) — upsert by (`$type`, `id`);
@@ -92,9 +92,9 @@ key imported via full `ECParameters` (`Signing/EcdsaP256.cs`). `SignData(data, h
 returns IEEE-P1363 r‖s on ns2.0; low-S normalized in `InlineAttestation`.
 
 ## Lexicons (local copies in `lexicons/`)
-`games.gamesgamesgamesgames.actor.play` holds one open-union **`state[]`** array +
+`games.gamesgamesgamesgames.experimental.actor.play` holds one open-union **`state[]`** array +
 top-level `outcome`/`participants`. Each state entry type is its **own lexicon**
-(`games.gamesgamesgamesgames.state.*`, the `app.bsky.embed.*` pattern — `main` is an
+(`games.gamesgamesgamesgames.experimental.state.*`, the `app.bsky.embed.*` pattern — `main` is an
 object, so `$type` is the bare NSID with no `#fragment`): `setup` (singleton),
 `setting`/`metric`/`objective`/`unlock`/`discovery`/`standing` (keyed by `id`),
 `acquisition`/`routeStop`/`partyMember` (instanced, carry `instanceId`). **Cardinality

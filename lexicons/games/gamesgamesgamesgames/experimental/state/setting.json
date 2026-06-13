@@ -1,10 +1,10 @@
 {
 	"lexicon": 1,
-	"id": "games.gamesgamesgamesgames.state.setting",
+	"id": "games.gamesgamesgamesgames.experimental.state.setting",
 	"defs": {
 		"main": {
 			"type": "object",
-			"description": "An arbitrary, game-specific configuration value chosen by the player, for use in a play record's `state` array. Use `games.gamesgamesgamesgames.state.setup` for the universal pre-run choices (mode, seed, character, difficulty); use this for everything else. Distinct from `state.metric`, which tracks values that change as the run progresses. Exactly one of `value`, `intValue`, `boolValue` or `dataValue` should be set. Cardinality: keyed — unique per ($type, id); writers upsert by `id`.",
+			"description": "An arbitrary, game-specific configuration value chosen by the player, for use in a play record's `state` array. Use `games.gamesgamesgamesgames.experimental.state.setup` for the universal pre-run choices (mode, seed, character, difficulty); use this for everything else. Distinct from `state.metric`, which tracks values that change as the run progresses. Exactly one of `value`, `intValue`, `boolValue` or `dataValue` should be set. Cardinality: keyed — unique per ($type, id); writers upsert by `id`.",
 			"required": [
 				"id"
 			],

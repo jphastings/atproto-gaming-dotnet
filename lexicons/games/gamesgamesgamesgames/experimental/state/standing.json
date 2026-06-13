@@ -1,6 +1,6 @@
 {
 	"lexicon": 1,
-	"id": "games.gamesgamesgamesgames.state.standing",
+	"id": "games.gamesgamesgamesgames.experimental.state.standing",
 	"defs": {
 		"main": {
 			"type": "object",

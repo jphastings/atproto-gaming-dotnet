@@ -1,10 +1,10 @@
 {
 	"lexicon": 1,
-	"id": "games.gamesgamesgamesgames.state.setup",
+	"id": "games.gamesgamesgamesgames.experimental.state.setup",
 	"defs": {
 		"main": {
 			"type": "object",
-			"description": "Pre-run configuration chosen before play begins, for use in a play record's `state` array. Cardinality: singleton — at most one entry of this $type per state array; writers replace the entry wholesale. Items applied at the start of a run (eg. meta unlocks from previous runs) should be `games.gamesgamesgamesgames.state.acquisition` entries with `via` set to `starting`. Game-specific values not covered here should be `games.gamesgamesgamesgames.state.setting` entries.",
+			"description": "Pre-run configuration chosen before play begins, for use in a play record's `state` array. Cardinality: singleton — at most one entry of this $type per state array; writers replace the entry wholesale. Items applied at the start of a run (eg. meta unlocks from previous runs) should be `games.gamesgamesgamesgames.experimental.state.acquisition` entries with `via` set to `starting`. Game-specific values not covered here should be `games.gamesgamesgamesgames.experimental.state.setting` entries.",
 			"properties": {
 				"mode": {
 					"type": "string",

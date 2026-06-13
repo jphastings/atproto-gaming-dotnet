@@ -1,10 +1,10 @@
 {
 	"lexicon": 1,
-	"id": "games.gamesgamesgamesgames.state.acquisition",
+	"id": "games.gamesgamesgamesgames.experimental.state.acquisition",
 	"defs": {
 		"main": {
 			"type": "object",
-			"description": "A notable item (eg. card, weapon, upgrade) the player acquired during a run, for use in a play record's `state` array. Cardinality: instanced — unique per ($type, id, instanceId); writers append in acquisition order and dedupe by `instanceId` when present. Run-scoped possession; for profile-scoped grants earned during the run, use `games.gamesgamesgamesgames.state.unlock` instead.",
+			"description": "A notable item (eg. card, weapon, upgrade) the player acquired during a run, for use in a play record's `state` array. Cardinality: instanced — unique per ($type, id, instanceId); writers append in acquisition order and dedupe by `instanceId` when present. Run-scoped possession; for profile-scoped grants earned during the run, use `games.gamesgamesgamesgames.experimental.state.unlock` instead.",
 			"required": [
 				"id"
 			],

@@ -7,7 +7,7 @@ using ByJP.AtprotoGaming.Core.Adapters;
 namespace ByJP.AtprotoGaming.Core
 {
     /// <summary>
-    /// A high-level handle for one <c>games.gamesgamesgamesgames.actor.play</c>
+    /// A high-level handle for one <c>games.gamesgamesgamesgames.experimental.actor.play</c>
     /// record across a play-through. You don't write through it directly — you
     /// <see cref="BeginUpdate"/> a transaction, record changes ("score is now N",
     /// "item acquired", "finished") on it, then <see cref="PlayUpdate.CommitAsync"/>
@@ -20,12 +20,12 @@ namespace ByJP.AtprotoGaming.Core
     /// </remarks>
     public sealed class PlaySession
     {
-        public const string Collection = "games.gamesgamesgamesgames.actor.play";
-        public const string SetupType = "games.gamesgamesgamesgames.state.setup";
-        public const string SettingType = "games.gamesgamesgamesgames.state.setting";
-        public const string MetricType = "games.gamesgamesgamesgames.state.metric";
-        public const string AcquisitionType = "games.gamesgamesgamesgames.state.acquisition";
-        public const string RouteStopType = "games.gamesgamesgamesgames.state.routeStop";
+        public const string Collection = "games.gamesgamesgamesgames.experimental.actor.play";
+        public const string SetupType = "games.gamesgamesgamesgames.experimental.state.setup";
+        public const string SettingType = "games.gamesgamesgamesgames.experimental.state.setting";
+        public const string MetricType = "games.gamesgamesgamesgames.experimental.state.metric";
+        public const string AcquisitionType = "games.gamesgamesgamesgames.experimental.state.acquisition";
+        public const string RouteStopType = "games.gamesgamesgamesgames.experimental.state.routeStop";
 
         private readonly PlayWriter _writer;
         private readonly string _rkey;
