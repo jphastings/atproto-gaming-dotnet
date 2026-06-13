@@ -43,6 +43,12 @@ and a **merge mode** that mirrors the lexicon's shape-implied cardinality:
 Keyless instanced appends are only safe because each CAS attempt starts from a fresh base.
 `outcome` and `participants` are **top-level** record fields, not state entries.
 
+`state[]` is kept in **last-edited order**: every mutating op re-appends its entry at the
+end (`MoveToEnd`/remove-then-`Add`), so the array runs oldest- → newest-touched and a
+write-once entry stays near the front. Ordering is advisory (values still converge under
+replay; only positions shift). Note `SetSetup` *merges*, so a late field fill (e.g. RoR2
+filling `character` once the body spawns) re-dates setup to the end — pin it only if needed.
+
 ## Final API surface (after the RoR2 gap fixes)
 - `OpenPlay(playId, game, gameVersion, source, additionalVersions?)` → `PlaySession`.
   `playId` sanitised to a valid record key (`RecordKey`); `DerivePlayID(startedAt, seed)`

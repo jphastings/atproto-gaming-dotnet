@@ -219,6 +219,49 @@ public class PlayOpsTests
         Assert.Equal("snow", entries[0]!["condition"]!.GetValue<string>());
     }
 
+    private static string[] TypeOrder(JsonObject rec) =>
+        State(rec).Select(n => n!["$type"]!.GetValue<string>()).ToArray();
+
+    [Fact]
+    public void EditingAKeyedEntryMovesItToTheEndForLastEditedOrdering()
+    {
+        var rec = Apply(new JsonObject(),
+            new JsonObject { ["op"] = "setSetup", ["fields"] = new JsonObject { ["seed"] = "AXK" } },
+            Metric("a", 1),
+            Metric("b", 2));
+
+        var metrics = EntriesOfType(rec, PlaySession.MetricType);
+        Assert.Equal("a", metrics[0]!["id"]!.GetValue<string>()); // insertion order: a, b
+        Assert.Equal("b", metrics[1]!["id"]!.GetValue<string>());
+
+        Apply(rec, Metric("a", 9)); // re-editing "a" moves it after "b"
+
+        metrics = EntriesOfType(rec, PlaySession.MetricType);
+        Assert.Equal("b", metrics[0]!["id"]!.GetValue<string>());
+        Assert.Equal("a", metrics[1]!["id"]!.GetValue<string>());
+        Assert.Equal(9, metrics[1]!["value"]!.GetValue<int>());
+
+        // setup, untouched since creation, stays at the front
+        Assert.Equal(PlaySession.SetupType, State(rec)[0]!["$type"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void EditingTheSetupSingletonMovesItToTheEnd()
+    {
+        var rec = Apply(new JsonObject(),
+            new JsonObject { ["op"] = "setSetup", ["fields"] = new JsonObject { ["seed"] = "AXK" } },
+            Metric("a", 1));
+        Assert.Equal(new[] { PlaySession.SetupType, PlaySession.MetricType }, TypeOrder(rec));
+
+        // A later setup edit (eg. character merged once known) re-dates it to the end.
+        Apply(rec, new JsonObject { ["op"] = "setSetup", ["fields"] = new JsonObject { ["character"] = "huntress" } });
+
+        Assert.Equal(new[] { PlaySession.MetricType, PlaySession.SetupType }, TypeOrder(rec));
+        var setup = (JsonObject)State(rec).Last(n => n!["$type"]!.GetValue<string>() == PlaySession.SetupType)!;
+        Assert.Equal("AXK", setup["seed"]!.GetValue<string>());       // merge preserved earlier field
+        Assert.Equal("huntress", setup["character"]!.GetValue<string>());
+    }
+
     [Fact]
     public void RouteArriveThenLeaveByInstanceIdSetsLeftAt()
     {
