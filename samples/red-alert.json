@@ -1,48 +1,52 @@
 {
-  "$type": "games.gamesgamesgamesgames.actor.play",
+  "$type": "games.gamesgamesgamesgames.experimental.actor.play",
   "game": "at://did:web:gamesgamesgamesgames.games/games.gamesgamesgamesgames.game/3mghbc3sps52d",
   "stats": "at://did:plc:ephkzpinhaqcabtkugtbzrwu/games.gamesgamesgamesgames.actor.stats/3mh9kf2ap6n2w",
-  "playingWith": [
+  "participants": [
     {
       "atproto": "did:plc:re253gupqudlfcugvxhdlr7v",
       "steam": "76561198044556677"
     }
   ],
-  "settings": {
-    "mode": "quickmatch",
-    "character": "soviet",
-    "map": "a_path_beyond"
+  "outcome": {
+    "type": "succeeded",
+    "cause": "annihilation"
   },
-  "progress": {
-    "outcome": {
-      "type": "succeeded",
-      "cause": "annihilation"
-    },
-    "credits": {
-      "harvested": 41250,
-      "spent": 38900
-    },
-    "unitsBuilt": 214,
-    "unitsLost": 138,
-    "buildingsDestroyed": 27,
-    "apm": 96
-  },
-  "acquisitions": [
+  "state": [
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.setup",
+      "mode": "quickmatch",
+      "character": "soviet"
+    },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "unitsBuilt", "value": 214 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "unitsLost", "value": 138 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "buildingsDestroyed", "value": 27 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "apm", "value": 96 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.setting", "id": "map", "value": "a_path_beyond" },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.setting",
+      "id": "credits",
+      "dataValue": { "harvested": 41250, "spent": 38900 }
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "iron_curtain",
       "kind": "superweapon",
       "name": "Iron Curtain Device",
+      "via": "pickup",
       "useCount": 3,
-      "addedAt": "2026-06-04T21:26:40.000Z"
+      "addedAt": "2026-06-04T21:26:40.000Z",
+      "instanceId": "0"
     },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "missile_silo",
       "kind": "superweapon",
       "name": "Missile Silo",
+      "via": "pickup",
       "useCount": 1,
-      "addedAt": "2026-06-04T21:30:18.000Z"
+      "addedAt": "2026-06-04T21:30:18.000Z",
+      "instanceId": "1"
     }
   ],
   "startedAt": "2026-06-04T21:14:02.000Z",
@@ -52,14 +56,8 @@
   "versions": {
     "game": "1.153.11",
     "additional": [
-      {
-        "name": "ra-atproto",
-        "version": "0.2.0"
-      },
-      {
-        "name": "atproto-gaming-dotnet",
-        "version": "0.0.1"
-      }
+      { "name": "ra-atproto", "version": "0.2.0" },
+      { "name": "atproto-gaming-dotnet", "version": "0.0.1" }
     ]
   }
 }

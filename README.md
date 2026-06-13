@@ -73,7 +73,7 @@ You assemble the record body (a `System.Text.Json.Nodes.JsonObject`) against the
 ```csharp
 using System.Text.Json.Nodes;
 
-const string PlayCollection = "games.gamesgamesgamesgames.actor.play";
+const string PlayCollection = "games.gamesgamesgamesgames.experimental.actor.play";
 const string game = "at://did:web:gamesgamesgamesgames.games/games.gamesgamesgamesgames.game/3mglj4k2edl2l";
 
 string rkey = Tid.FromPlayThrough(startedAtUnixSeconds, runSeed);   // runSeed: ulong or string
@@ -99,14 +99,14 @@ var play = new JsonObject
 await atproto.Records.PutAsync(PlayCollection, rkey, play);
 ```
 
-**On significant progress**, mutate `play` (`updatedAt`, `progress`, `acquisitions`, …) and PUT again with the **same rkey** — it replaces the previous state. Throttling/dirty-bit logic is yours; the package just publishes when asked.
+**On significant progress**, mutate `play` (`updatedAt`, and the entries in the `state[]` array) and PUT again with the **same rkey** — it replaces the previous state. Throttling/dirty-bit logic is yours; the package just publishes when asked. (Assembling `state[]` by hand is fiddly — the [`PlaySession` transaction API below](#higher-level-declare-what-changed-transactional-optimistic-locking) builds it for you.)
 
-**At the end**, set the outcome and roll the stats:
+**At the end**, set the outcome (a top-level field) and roll the stats:
 
 ```csharp
 play["endedAt"]  = endedAtIso;
 play["duration"] = durationSeconds;
-((JsonObject)play["progress"]!)["outcome"] = new JsonObject { ["type"] = "failed", ["cause"] = "bygone-effigy" };
+play["outcome"]  = new JsonObject { ["type"] = "failed", ["cause"] = "bygone-effigy" };
 
 await atproto.Stats.EnsureAndUpdateAsync(game, StatsSource.Steam, durationSeconds, endedAtIso);  // adds minutes, bumps lastPlayed
 await atproto.Records.PutAsync(PlayCollection, rkey, play);
@@ -136,11 +136,12 @@ var play = atproto.OpenPlay(
 // A transaction gathers changes (in memory) across many event handlers / frames…
 // The first commit creates the record from the seed if it doesn't exist yet.
 var tx = play.BeginUpdate();
-tx.SetProgress("score", 1234)                                    // values convert implicitly
-  .IncrementProgress("kills", 1)                                 // int-only, fails otherwise
-  .SetProgress("gold", new JsonObject { ["earned"] = 12, ["spent"] = 4 })  // nested values too
+tx.SetSetup(seed: runSeed.ToString(), character: "silent", difficulty: 1)  // pre-run choices (merged)
+  .SetMetric("score", 1234)                                      // absolute numeric value
+  .UpdateMetric("kills", 1, ProgressOp.Add)                      // int-only delta, resolved at write
+  .SetSetting("gold", new JsonObject { ["earned"] = 12, ["spent"] = 4 })  // arbitrary nested value
   .AddAcquisition(new JsonObject { ["id"] = "relic.cracked_core", ["kind"] = "relic" })
-  .AddRouteStop(new JsonObject { ["id"] = "boss:effigy", ["name"] = "Bygone Effigy" });
+  .RouteArrive("boss:effigy", name: "Bygone Effigy");
 // …then flush them as a single record write at, say, end of stage:
 await tx.CommitAsync();   // one PUT, updatedAt bumped once
 
@@ -160,7 +161,7 @@ the generic editor: `atproto.Records.Edit(collection, rkey, seed).ApplyAsync(r =
 
 - **Signed records** — pass a `SigningKey` in the options; every record then carries a badge.blue-style `signatures` entry over its CID, verifiable by the published public `did:key`. Records still publish fine unsigned.
 - **Save-fork lineage** — `StrongRef.Create(uri, cid)` (or `StrongRef.FromRecordBody(uri, body)` to compute the CID) for the lexicon's `forkedFrom`.
-- **Multiplayer backfill** — `atproto.Steam.LookupDidAsync(steamId64)` resolves a SteamID64 to a DID for `playingWith[].atproto`.
+- **Multiplayer backfill** — `atproto.Steam.LookupDidAsync(steamId64)` resolves a SteamID64 to a DID for `participants[].atproto`.
 - **Achievements** — `atproto.Achievements.TryClaim(id)` de-dups unlock writes within a session; publish to your own NSID via `atproto.Records.PutAsync`.
 - **Other records** — `Records.PutAsync` is collection-agnostic; pass any NSID (lobby records, achievement logs, your stats record, …).
 
@@ -175,7 +176,7 @@ Overall play stats are posted with the [`games.gamesgamesgamesgames.actor.stats`
 
 ### Play-through details
 
-Statistics for a particular play-through of a game. For a rogue-like there may be many, many of these. Stored in a `games.gamesgamesgamesgames.actor.play` record.
+Statistics for a particular play-through of a game. For a rogue-like there may be many, many of these. Stored in a `games.gamesgamesgamesgames.experimental.actor.play` record.
 
 > [!NOTE]
 > This is a proposed lexicon not currently in the `games.gamesgamesgamesgames` suite.
@@ -188,83 +189,85 @@ The `rkey` of the record for the run has some constraints, to make updates & fin
 
 This package's code has a helper for generatring a suitable `rkey` from the start time of a rogue-like run and its seed, as games like these often both persist this data across resumes and propagate those values between participants in multiplayer modes.
 
-See the [.actor.play lexicon here](./lexicons/games/gamesgamesgamesgames/actor/play.json), an example for [Slay the Spire 2](https://cartridge.dev/game/slay-the-spire-ii) is below:
+See the [.experimental.actor.play lexicon here](./lexicons/games/gamesgamesgamesgames/experimental/actor/play.json), an example for [Slay the Spire 2](https://cartridge.dev/game/slay-the-spire-ii) is below:
 
 ```jsonc
 {
-  "$type": "games.gamesgamesgamesgames.actor.play",
+  "$type": "games.gamesgamesgamesgames.experimental.actor.play",
   "game": "at://did:web:gamesgamesgamesgames.games/games.gamesgamesgamesgames.game/3mglj4k2edl2l",
   "stats": "at://did:plc:ephkzpinhaqcabtkugtbzrwu/games.gamesgamesgamesgames.actor.stats/3mjrmxutfln2h",
-  // Multiplayer participants
+  // Multiplayer participants (a top-level field)
   // Atproto ID can be looked up with dev.keytrace.reverseLookup
   // Because rkey is the same across participants, lookup of other players' records is trivial
-  "playingWith": [
-    { "atproto": "did:plc:sy4qmi35imvto5yjhuwdeozk", "steam": "76561198009200312"},
-    { "atproto": "did:plc:re253gupqudlfcugvxhdlr7v", "steam": "76561199436603652"}
+  "participants": [
+    { "atproto": "did:plc:sy4qmi35imvto5yjhuwdeozk", "steam": "76561198009200312" },
+    { "atproto": "did:plc:re253gupqudlfcugvxhdlr7v", "steam": "76561199436603652" }
   ],
-  // Attributes that are configured before the run begins
-  "settings": {
-    // The seed of the run, if using seeded play
-    "seed": "AXK36RTM4T",
-    // sts2
-    "character": "silent",
-    // Representing Ascension level 1
-    "difficulty": 1
+  // How the run ended (a top-level field); unset while in progress
+  "outcome": {
+    // The overarching outcome type: failed, abandoned, succeeded
+    "type": "failed",
+    // An id for the reason behind the outcome, eg. the win scenario, or boss that killed you
+    "cause": "bygone-effigy"
   },
-  // Open ended object for single values which accumulate or alter through the game as a measure of how well you're doing
-  "progress": {
-    // The stops along the route so far, each a #routeStop (game-specific id, optional name & timing)
-    "route": [
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
-        "id": "monster:nibbit", "name": "Nibbit",
-        "startedAt": "2026-04-18T13:30:50.221Z", "endedAt": "2026-04-18T13:41:20.221Z" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
-        "id": "monster:twig-slimes", "name": "Twig Slimes",
-        "startedAt": "2026-04-18T13:41:20.221Z", "endedAt": "2026-04-18T13:53:10.221Z" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
-        "id": "marketplace", "name": "Marketplace",
-        "startedAt": "2026-04-18T13:53:10.221Z", "endedAt": "2026-04-18T13:58:40.221Z" },
-      // endedAt is set here because the run ended at this stop; leave it unset while a stop is still current
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
-        "id": "boss:bygone-effigy", "name": "Bygone Effigy",
-        "startedAt": "2026-04-18T14:05:30.221Z", "endedAt": "2026-04-18T14:18:01.221Z" }
-    ],
-    // What happened at the end of the game
-    // Should be unset for in-progress runs
-    "outcome": {
-      // The overarching outcome type: failed, abandoned, succeeded
-      "type": "failed",
-      // An id for the reason behind the outomce, eg. the win scenario, or boss that killed you
-      "cause": "bygone-effigy"
+  // Everything else lives in one open-union state[] of typed entries. Each entry's
+  // $type is its own lexicon; cardinality is implied by shape — id+instanceId =>
+  // instanced (appended, deduped by instanceId), id only => keyed (upserted by id),
+  // neither => singleton (replaced). Entries are kept in last-edited order.
+  "state": [
+    // setup: a singleton of choices configured before the run begins
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.setup",
+      "seed": "AXK36RTM4T",   // the run seed, if using seeded play
+      "character": "silent",  // sts2
+      "difficulty": 1         // Ascension level 1
     },
-    // Other game-specific attributes
-    "act": 2,
-    "floor": 19,
-    "hp": 34,
-    "hpMax": 89,
-    "turns": 49,
-    "gold": { "earned": 319, "spent": 241 },
-  },
-  // Things you've acquired inside the play-through.
-  "acquisitions": [
-    // You can use the generic type, which requires an id, and has an optional name, addedAt & useCount
-    { "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+    // metric: a numeric indicator that accumulates/alters through the run, keyed by id
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "act", "value": 2 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "floor", "value": 19 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "hp", "value": 34 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "hpMax", "value": 89 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "turns", "value": 49 },
+    // setting: an arbitrary game-specific value; a nested object goes in dataValue
+    { "$type": "games.gamesgamesgamesgames.experimental.state.setting",
+      "id": "gold", "dataValue": { "earned": 319, "spent": 241 } },
+    // acquisition: something acquired in the run (instanced; instanceId dedupes
+    // re-emits). Can carry game-specific detail in the open `extra` union.
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "silent.strike+/corrupted",
       "kind": "card",
       "name": "Strike (Upgraded, Corrupted)",
+      "via": "pickup",
       "useCount": 40,
       "addedAt": "2026-04-18T13:38:20.221Z",
+      "instanceId": "0",
       "extra": [
         { "$type": "com.megacrit.sts2.card",
           "deck": "silent",
           "name": "strike",
           "upgraded": true,
           "enchantment": "corrupted" }]},
-    { "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
-      "kind": "relic",
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "cracked_core",
+      "kind": "relic",
       "name": "Cracked Core",
-      "addedAt": "2026-04-18T13:52:10.221Z" }
+      "via": "pickup",
+      "addedAt": "2026-04-18T13:52:10.221Z",
+      "instanceId": "1" },
+    // routeStop: a stop along the route (instanced). arrivedAt/leftAt replace the
+    // old startedAt/endedAt; leave leftAt unset while a stop is still current.
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop",
+      "id": "monster:nibbit", "name": "Nibbit", "instanceId": "0",
+      "arrivedAt": "2026-04-18T13:30:50.221Z", "leftAt": "2026-04-18T13:41:20.221Z" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop",
+      "id": "monster:twig-slimes", "name": "Twig Slimes", "instanceId": "1",
+      "arrivedAt": "2026-04-18T13:41:20.221Z", "leftAt": "2026-04-18T13:53:10.221Z" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop",
+      "id": "marketplace", "name": "Marketplace", "instanceId": "2",
+      "arrivedAt": "2026-04-18T13:53:10.221Z", "leftAt": "2026-04-18T13:58:40.221Z" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop",
+      "id": "boss:bygone-effigy", "name": "Bygone Effigy", "instanceId": "3",
+      "arrivedAt": "2026-04-18T14:05:30.221Z", "leftAt": "2026-04-18T14:18:01.221Z" }
   ],
   // When the play-through started
   "startedAt": "2026-04-18T13:30:44.221Z",

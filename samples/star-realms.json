@@ -1,86 +1,99 @@
 {
-  "$type": "games.gamesgamesgamesgames.actor.play",
+  "$type": "games.gamesgamesgamesgames.experimental.actor.play",
   "game": "at://did:web:gamesgamesgamesgames.games/games.gamesgamesgamesgames.game/3mghex5kej52d",
   "stats": "at://did:plc:ephkzpinhaqcabtkugtbzrwu/games.gamesgamesgamesgames.actor.stats/3mh9x2tqd5n2k",
-  "playingWith": [
+  "participants": [
     {
       "atproto": "did:plc:re253gupqudlfcugvxhdlr7v",
       "steam": "76561198044556677"
     }
   ],
-  "settings": {
-    "mode": "ranked",
-    "sets": [
-      "core",
-      "colony_wars"
-    ]
+  "outcome": {
+    "type": "succeeded"
   },
-  "progress": {
-    "outcome": {
-      "type": "succeeded"
-    },
-    "turns": 14,
-    "authority": 37,
-    "opponentAuthority": 0,
-    "combatDealt": 112,
-    "tradeGenerated": 96
-  },
-  "acquisitions": [
+  "state": [
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.setup",
+      "mode": "ranked",
+      "modifiers": [
+        { "id": "core", "name": "Core Set" },
+        { "id": "colony_wars", "name": "Colony Wars" }
+      ]
+    },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "turns", "value": 14 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "authority", "value": 37 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "opponentAuthority", "value": 0 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "combatDealt", "value": 112 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "tradeGenerated", "value": 96 },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "cutter",
       "kind": "ship",
       "name": "Cutter",
+      "via": "purchased",
       "useCount": 5,
-      "addedAt": "2026-06-05T14:03:10.000Z"
+      "addedAt": "2026-06-05T14:03:10.000Z",
+      "instanceId": "0"
     },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "imperial_fighter",
       "kind": "ship",
       "name": "Imperial Fighter",
+      "via": "purchased",
       "useCount": 4,
-      "addedAt": "2026-06-05T14:04:55.000Z"
+      "addedAt": "2026-06-05T14:04:55.000Z",
+      "instanceId": "1"
     },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "battle_station",
       "kind": "base",
       "name": "Battle Station",
+      "via": "purchased",
       "useCount": 4,
-      "addedAt": "2026-06-05T14:06:40.000Z"
+      "addedAt": "2026-06-05T14:06:40.000Z",
+      "instanceId": "2"
     },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "trade_bot",
       "kind": "ship",
       "name": "Trade Bot",
+      "via": "purchased",
       "useCount": 4,
-      "addedAt": "2026-06-05T14:08:30.000Z"
+      "addedAt": "2026-06-05T14:08:30.000Z",
+      "instanceId": "3"
     },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "blob_wheel",
       "kind": "base",
       "name": "Blob Wheel",
+      "via": "purchased",
       "useCount": 3,
-      "addedAt": "2026-06-05T14:10:15.000Z"
+      "addedAt": "2026-06-05T14:10:15.000Z",
+      "instanceId": "4"
     },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "battle_blob",
       "kind": "ship",
       "name": "Battle Blob",
+      "via": "purchased",
       "useCount": 2,
-      "addedAt": "2026-06-05T14:12:40.000Z"
+      "addedAt": "2026-06-05T14:12:40.000Z",
+      "instanceId": "5"
     },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "command_ship",
       "kind": "ship",
       "name": "Command Ship",
+      "via": "purchased",
       "useCount": 2,
-      "addedAt": "2026-06-05T14:14:50.000Z"
+      "addedAt": "2026-06-05T14:14:50.000Z",
+      "instanceId": "6"
     }
   ],
   "startedAt": "2026-06-05T14:02:00.000Z",
@@ -90,14 +103,8 @@
   "versions": {
     "game": "5.2.0",
     "additional": [
-      {
-        "name": "starrealms-atproto",
-        "version": "0.1.0"
-      },
-      {
-        "name": "atproto-gaming-dotnet",
-        "version": "0.0.1"
-      }
+      { "name": "starrealms-atproto", "version": "0.1.0" },
+      { "name": "atproto-gaming-dotnet", "version": "0.0.1" }
     ]
   }
 }
