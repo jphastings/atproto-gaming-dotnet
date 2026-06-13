@@ -21,8 +21,11 @@ namespace ByJP.AtprotoGaming.Core
     public sealed class PlaySession
     {
         public const string Collection = "games.gamesgamesgamesgames.actor.play";
-        public const string GameItemType = "games.gamesgamesgamesgames.actor.play#gameItem";
-        public const string RouteStopType = "games.gamesgamesgamesgames.actor.play#routeStop";
+        public const string SetupType = "games.gamesgamesgamesgames.state.setup";
+        public const string SettingType = "games.gamesgamesgamesgames.state.setting";
+        public const string MetricType = "games.gamesgamesgamesgames.state.metric";
+        public const string AcquisitionType = "games.gamesgamesgamesgames.state.acquisition";
+        public const string RouteStopType = "games.gamesgamesgamesgames.state.routeStop";
 
         private readonly PlayWriter _writer;
         private readonly string _rkey;
@@ -80,7 +83,7 @@ namespace ByJP.AtprotoGaming.Core
         {
             if (_value == null)
                 throw new InvalidOperationException("commit the play before forking it");
-            if (_value["endedAt"] is JsonNode || _value["progress"]?["outcome"] is JsonNode)
+            if (_value["endedAt"] is JsonNode || _value["outcome"] is JsonNode)
                 throw new InvalidOperationException("cannot fork an ended play (it has an endedAt or outcome)");
             return _writer.Fork(_rkey, _value, _cid, id, _source);
         }

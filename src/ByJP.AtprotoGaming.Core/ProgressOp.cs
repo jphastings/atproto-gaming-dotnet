@@ -1,8 +1,8 @@
 namespace ByJP.AtprotoGaming.Core
 {
     /// <summary>
-    /// How <see cref="PlayUpdate.UpdateProgress"/> combines its value with the
-    /// existing integer progress value, resolved against the real record at write
+    /// How <see cref="PlayUpdate.UpdateMetric"/> combines its value with the
+    /// existing integer metric value, resolved against the real record at write
     /// time (so it's correct even after an offline queue).
     /// </summary>
     public enum ProgressOp

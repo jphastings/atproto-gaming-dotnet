@@ -27,27 +27,23 @@ public class AnalyzerTests
 
     [Fact]
     public Task CamelCaseKeyIsClean() =>
-        VerifyAsync("tx.SetProgress(\"hpMax\", 1);");
+        VerifyAsync("tx.SetMetric(\"hpMax\", 1);");
 
     [Fact]
-    public Task NonCamelCaseProgressKeyIsFlagged() =>
-        VerifyAsync("tx.SetProgress({|BAG001:\"HpMax\"|}, 1);");
+    public Task NonCamelCaseMetricKeyIsFlagged() =>
+        VerifyAsync("tx.SetMetric({|BAG001:\"HpMax\"|}, 1);");
+
+    [Fact]
+    public Task NonCamelCaseUpdateMetricKeyIsFlagged() =>
+        VerifyAsync("tx.UpdateMetric({|BAG001:\"Kills\"|}, 1, ProgressOp.Add);");
 
     [Fact]
     public Task NonCamelCaseSettingKeyIsFlagged() =>
         VerifyAsync("tx.SetSetting({|BAG001:\"Difficulty\"|}, 1);");
 
     [Fact]
-    public Task ReservedProgressKeyIsAnError() =>
-        VerifyAsync("tx.SetProgress({|BAG002:\"outcome\"|}, 1);");
-
-    [Fact]
-    public Task ReservedKeyOnUpdateProgressIsAnError() =>
-        VerifyAsync("tx.UpdateProgress({|BAG002:\"route\"|}, 1, ProgressOp.Add);");
-
-    [Fact]
     public Task NonLiteralKeyIsIgnored() =>
-        VerifyAsync("string k = \"HpMax\"; tx.SetProgress(k, 1);");
+        VerifyAsync("string k = \"HpMax\"; tx.SetMetric(k, 1);");
 
     [Theory]
     [InlineData("hpMax", true)]
