@@ -1,50 +1,121 @@
-name: Publish
+# Coordinated release: publishing a GitHub release builds + attaches the sidecar
+# binaries AND publishes the NuGet package, both versioned from the release tag.
+#
+# This file is named publish.yml (not release.yml) on purpose: nuget.org's Trusted
+# Publishing policy is bound to this workflow file path. Keep the path.
+name: Release
 
 on:
-  push:
-    branches: [main]
-    paths: ["src/ByJP.AtprotoGaming.Core/ByJP.AtprotoGaming.Core.csproj"] # publish on a <Version> change
-  workflow_dispatch:
-
-# Trusted Publishing: mint a short-lived nuget.org key via OIDC — no stored API key.
-permissions:
-  contents: read
-  id-token: write
+  release:
+    types: [published]
 
 jobs:
-  publish:
+  # Shared gate + single source of the version (tag without a leading "v"), so a
+  # broken build blocks both the package and the binaries.
+  test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Version from tag
+        id: version
+        run: echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+        env:
+          TAG: ${{ github.event.release.tag_name }}
 
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
         with:
           dotnet-version: 9.0.x
 
-      # Don't publish a broken package.
       - name: Test
         run: dotnet test ByJP.AtprotoGaming.Core.sln -c Release
+
+  package:
+    needs: test
+    runs-on: ubuntu-latest
+    # Trusted Publishing: mint a short-lived nuget.org key via OIDC — no stored API key.
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
+        with:
+          dotnet-version: 9.0.x
 
       - name: Pack
         run: |
           dotnet pack src/ByJP.AtprotoGaming.Core/ByJP.AtprotoGaming.Core.csproj \
-            -c Release -p:ContinuousIntegrationBuild=true -o artifacts
+            -c Release -p:ContinuousIntegrationBuild=true \
+            -p:Version=${{ needs.test.outputs.version }} -o artifacts
 
       # Exchange the GitHub OIDC token for a 1-hour nuget.org key. Requires a Trusted
       # Publishing policy on nuget.org (owner=jphastings, repo=atproto-gaming-dotnet,
-      # workflow=publish.yml). `user` is your nuget.org profile name (not your email);
-      # it isn't a credential, just kept out of the file via the NUGET_USER variable.
+      # workflow=publish.yml). `user` is your nuget.org profile name (not a credential).
       - name: NuGet login (OIDC → temp key)
         id: login
         uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
         with:
           user: ${{ vars.NUGET_USER }}
 
-      # nuget.org versions are immutable; --skip-duplicate makes a re-run (or a push that
-      # didn't bump <Version>) a harmless no-op. The .snupkg beside the .nupkg goes too.
+      # nuget.org versions are immutable; --skip-duplicate makes a re-run a no-op.
       - name: Push to nuget.org
         run: |
           dotnet nuget push "artifacts/*.nupkg" \
             --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate
+
+  sidecar:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # upload release assets
+    strategy:
+      fail-fast: false
+      matrix:
+        rid: [linux-x64, linux-arm64, win-x64, osx-x64, osx-arm64]
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
+        with:
+          dotnet-version: 9.0.x
+
+      # Self-contained single file → the player needs no .NET install. No ReadyToRun/AOT,
+      # so every RID cross-publishes from this one Linux runner. Stamped with the tag.
+      - name: Publish ${{ matrix.rid }}
+        run: |
+          dotnet publish src/ByJP.AtprotoGaming.Sidecar/ByJP.AtprotoGaming.Sidecar.csproj \
+            -c Release -r ${{ matrix.rid }} --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:EnableCompressionInSingleFile=true \
+            -p:DebugType=none \
+            -p:Version=${{ needs.test.outputs.version }} \
+            -o out
+
+      - name: Package
+        id: package
+        run: |
+          set -euo pipefail
+          rid='${{ matrix.rid }}'
+          name="atproto-gaming-sidecar-${rid}"
+          cd out
+          if [[ "$rid" == win-* ]]; then
+            asset="${name}.zip"
+            zip -j "../${asset}" ByJP.AtprotoGaming.Sidecar.exe
+          else
+            chmod +x ByJP.AtprotoGaming.Sidecar
+            asset="${name}.tar.gz"
+            tar -czf "../${asset}" ByJP.AtprotoGaming.Sidecar
+          fi
+          echo "asset=${asset}" >> "$GITHUB_OUTPUT"
+
+      # gh is preinstalled and uses the job's GITHUB_TOKEN — no third-party action to pin.
+      - name: Attach to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" "${{ steps.package.outputs.asset }}" --clobber
