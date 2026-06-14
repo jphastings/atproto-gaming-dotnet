@@ -212,10 +212,12 @@ internal sealed class CommandProcessor
     }
 
     /// <summary>
-    /// Lists the player's play records for a game so a seedless game can pick one to
-    /// resume: by default the un-ended ones, each with its rkey, timestamps, and an
-    /// optional named metric value. Read-only — needs a signed-in sidecar but not
-    /// client approval (play records are already public on the PDS).
+    /// Lists the player's play records for a game (ended and in-progress), each with its
+    /// rkey, timestamps, outcome, and an optional named metric value — so a game without
+    /// seeds or save IDs can find the run to resume. With <c>value</c>, returns just the
+    /// single closest play at or above that metric value (the likeliest save-state
+    /// match), leaving the game to read its outcome and decide. Read-only — needs a
+    /// signed-in sidecar but not client approval (play records are already public).
     /// </summary>
     private async Task<ProcessResult> PlaysListAsync(Request req, JsonNode? id)
     {
@@ -227,9 +229,11 @@ internal sealed class CommandProcessor
         if (!AtUri.IsValid(game))
             throw new WireException(WireProtocol.Errors.InvalidValue, $"not a valid AT URI: {game}");
         var metricId = req.OptStr("metric");
-        var includeEnded = req.OptBool("includeEnded", false);
+        long? threshold = req.Has("value") ? req.Long("value") : null;
+        if (threshold != null && metricId == null)
+            throw new WireException(WireProtocol.Errors.InvalidValue, "'value' requires 'metric'");
 
-        var found = new List<JsonObject>();
+        var found = new List<(JsonObject entry, long? metricValue)>();
         try
         {
             string? cursor = null;
@@ -242,19 +246,20 @@ internal sealed class CommandProcessor
                     {
                         if (node is not JsonObject record || record["value"] is not JsonObject value) continue;
                         if (value["game"]?.GetValue<string>() != game) continue;
-                        var ended = value["endedAt"] is JsonNode || value["outcome"] is JsonNode;
-                        if (ended && !includeEnded) continue;
 
                         var entry = new JsonObject { ["rkey"] = RkeyOf(record["uri"]!.GetValue<string>()) };
                         if (value["startedAt"] is JsonNode startedAt) entry["startedAt"] = startedAt.DeepClone();
                         if (value["updatedAt"] is JsonNode updatedAt) entry["updatedAt"] = updatedAt.DeepClone();
-                        if (ended) entry["ended"] = true;
+                        if (value["outcome"] is JsonNode outcome) entry["outcome"] = outcome.DeepClone();
+
+                        long? metricValue = null;
                         if (metricId != null && FindMetric(value, metricId) is JsonObject metric)
                         {
                             entry["value"] = metric["value"]!.DeepClone();
                             if (metric["scale"] is JsonNode scale) entry["scale"] = scale.DeepClone();
+                            if (TryLong(metric["value"], out var mv)) metricValue = mv;
                         }
-                        found.Add(entry);
+                        found.Add((entry, metricValue));
                     }
                 }
                 cursor = page?["cursor"]?.GetValue<string>();
@@ -265,14 +270,40 @@ internal sealed class CommandProcessor
             return ProcessResult.Reply(Error(id, WireProtocol.Errors.Unavailable, $"couldn't reach the PDS: {ex.Message}"));
         }
 
-        // Most-recently-updated first — the likeliest resume candidate.
-        found.Sort((a, b) => string.CompareOrdinal(When(b), When(a)));
         var plays = new JsonArray();
-        foreach (var entry in found) plays.Add(entry);
+        if (threshold != null)
+        {
+            // Closest match at or above the threshold (smallest qualifying value),
+            // tie-broken by most-recent — the run a save-state at this value belongs to.
+            JsonObject? best = null;
+            long bestValue = 0;
+            foreach (var (entry, metricValue) in found)
+            {
+                if (metricValue is not long v || v < threshold.Value) continue;
+                if (best == null || v < bestValue
+                    || (v == bestValue && string.CompareOrdinal(When(entry), When(best)) > 0))
+                {
+                    best = entry;
+                    bestValue = v;
+                }
+            }
+            if (best != null) plays.Add(best);
+        }
+        else
+        {
+            found.Sort((a, b) => string.CompareOrdinal(When(b.entry), When(a.entry))); // most-recent first
+            foreach (var (entry, _) in found) plays.Add(entry);
+        }
 
         var body = Ok(id, ("type", "plays"));
         body["plays"] = plays;
         return ProcessResult.Reply(body);
+    }
+
+    private static bool TryLong(JsonNode? node, out long value)
+    {
+        value = 0;
+        return node is JsonValue v && v.GetValueKind() == JsonValueKind.Number && long.TryParse(v.ToJsonString(), out value);
     }
 
     private static string When(JsonObject entry) =>
@@ -340,6 +371,9 @@ internal sealed class CommandProcessor
             case "outcome.set":
                 u.SetOutcome(req.Str("type"), req.OptStr("cause"));
                 conn.PendingTerminal = true;
+                break;
+            case "outcome.clear":
+                u.ClearOutcome(); // un-ends the play (e.g. resuming a save-state); not terminal
                 break;
             case "participants.set":
                 u.SetParticipants(Objects(req.Arr("participants"), "participants"));

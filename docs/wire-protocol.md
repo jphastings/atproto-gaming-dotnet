@@ -213,6 +213,7 @@ All of these **buffer** (return `ok` with no network) and require an active play
 | `route.arrive` | `id`, `instanceId`?, `name`?, `arrivedAt`? (iso) | `RouteArrive` | give `instanceId` to make it idempotent and let `route.leave` target it |
 | `route.leave` | `id`, `instanceId`?, `leftAt`? (iso) | `RouteLeave` | closes the matching open stop |
 | `outcome.set` | `type`, `cause`? | `SetOutcome` | top-level end-of-play marker |
+| `outcome.clear` | — | `ClearOutcome` | removes the outcome — un-ends a play so it can be resumed (e.g. after a save-state was recorded as `abandoned`); leaves `endedAt`/`duration` |
 | `participants.set` | `participants` (array of objects) | `SetParticipants` | a `steam` field must be a SteamID64 (17-digit) |
 | `finish` | `endedAt` (iso), `durationSeconds` (int) | `Finish` | sets `endedAt` + `duration` |
 | `state.replace` | `type` (nsid), `entry` (object) | `ReplaceState` | singleton escape hatch |
@@ -241,34 +242,41 @@ discoveries, standings, party members, …) and which op writes each.
 
 ### 5.5 Queries — `plays.list`
 
-Lists the player's play records for a game, so a game **without seeds or save IDs** can
-show its in-progress runs and let the player pick one to resume. Read-only: it needs the
-sidecar to be signed in, but **not** client approval (play records are already public on
-the PDS). Independent of `open` — issue it any time after `hello`.
+Lists the player's play records for a game — **ended and in-progress** — so a game
+**without seeds or save IDs** can find the run to resume. Read-only: needs the sidecar
+signed in, but **not** client approval (play records are already public on the PDS).
+Independent of `open` — issue it any time after `hello`.
 
 ```json
-{"cmd":"plays.list","game":"at://did:plc:…/dev.cartridge.game/super-mario-land","metric":"score"}
+{"cmd":"plays.list","game":"at://…/super-mario-land","metric":"score","value":909000}
 ```
 
 | field | required | meaning |
 |---|---|---|
 | `game` | yes | the game's AT-URI (as in `open`) — only this game's plays are returned |
 | `metric` | no | a metric `id` (e.g. `score`) to project for each play |
-| `includeEnded` | no | include finished plays too (default `false` → un-ended only) |
+| `value` | no | an integer threshold (**requires `metric`**): return only the single closest play whose metric is **at or above** it |
+
+**Without `value`** — every play for the game, most-recently-updated first:
 
 ```json
 {"ok":true,"type":"plays","plays":[
-  {"rkey":"3ku7a…","startedAt":"…","updatedAt":"…","value":904002},
+  {"rkey":"3ku7a…","startedAt":"…","updatedAt":"…","value":909500,"outcome":{"type":"abandoned"}},
   {"rkey":"9f2b…","startedAt":"…","updatedAt":"…","value":12500}
 ]}
 ```
 
-- Returns the un-ended plays (no `endedAt` and no `outcome`) for `game`,
-  **most-recently-updated first** — pass a returned `rkey` straight back to `open` as
-  `playId` to resume it.
+**With `value`** — `plays` holds **at most one** entry: the play with the *smallest*
+metric value that is ≥ `value` (the likeliest match for a save-state at that value), or
+empty if none qualify.
+
+- Each entry carries its `rkey`, `startedAt`/`updatedAt`, and `outcome` (the
+  `{type,cause?}` object, omitted while in progress) — so the game can read the outcome
+  and **decide whether to resume** (e.g. resume an `abandoned` save-state, ignore a
+  `succeeded` run). Pass the chosen `rkey` back to `open` as `playId`, then `outcome.clear`
+  to un-end it.
 - `value` (and `scale` for fixed-point — real value = `value`/10^`scale`) appear only when
   `metric` was given and the play carries that metric.
-- With `includeEnded:true`, finished plays are included too and each carries `"ended":true`.
 - `error:"unavailable"` if the sidecar isn't signed in (no DID known) or can't reach the PDS.
 
 ## 6. Error codes
@@ -433,7 +441,7 @@ All timestamps are ISO-8601 UTC.
 
 | field | command | shape |
 |---|---|---|
-| `outcome` | `outcome.set` | `type` ∈ `failed`·`abandoned`·`succeeded` (free text allowed); `cause` (game-specific, e.g. the boss's id) |
+| `outcome` | `outcome.set` / `outcome.clear` | `type` ∈ `failed`·`abandoned`·`succeeded` (free text allowed); `cause` (game-specific, e.g. the boss's id). `outcome.clear` removes it, un-ending a play to resume it |
 | `participants` | `participants.set` | array of `{atproto`(DID)`, steam`(SteamID64 decimal string)`}` — at least one of the two per entry |
 | `endedAt` + `duration` | `finish` | `endedAt` (ISO), `durationSeconds` (int) |
 

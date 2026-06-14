@@ -308,7 +308,7 @@ public class ProtocolTests
     }
 
     [Fact]
-    public async Task Plays_list_returns_unended_plays_for_the_game_with_the_metric()
+    public async Task Plays_list_returns_all_plays_for_the_game_with_outcome_and_metric()
     {
         const string g1 = "at://did:plc:gb/dev.cartridge.game/super-mario-land";
         const string g2 = "at://did:plc:gb/dev.cartridge.game/tetris";
@@ -317,20 +317,60 @@ public class ProtocolTests
         h.Approve();
 
         var a = await CreatePlayAsync(h, g1, "run-a", 100, ended: false);
-        var b = await CreatePlayAsync(h, g1, "run-b", 250, ended: false);
-        await CreatePlayAsync(h, g1, "run-c", 50, ended: true);   // ended → excluded
-        await CreatePlayAsync(h, g2, "run-d", 999, ended: false); // other game → excluded
+        var c = await CreatePlayAsync(h, g1, "run-c", 50, ended: true);   // ended is now included
+        await CreatePlayAsync(h, g2, "run-d", 999, ended: false);         // other game → excluded
 
         var resp = await h.SendAsync($"{{\"cmd\":\"plays.list\",\"game\":\"{g1}\",\"metric\":\"score\"}}");
-        Assert.True(Ok(resp));
         Assert.Equal("plays", Str(resp, "type"));
         var plays = (JsonArray)resp["plays"]!;
 
         Assert.Equal(2, plays.Count);
         Assert.Equal("100", PlayByRkey(plays, a)!["value"]!.ToJsonString());
-        Assert.Equal("250", PlayByRkey(plays, b)!["value"]!.ToJsonString());
-        Assert.Null(PlayByRkey(plays, "run-c"));
+        Assert.Equal("succeeded", PlayByRkey(plays, c)!["outcome"]!["type"]!.GetValue<string>());
         Assert.Null(PlayByRkey(plays, "run-d"));
+    }
+
+    [Fact]
+    public async Task Plays_list_with_a_value_returns_the_closest_play_at_or_above()
+    {
+        const string g1 = "at://did:plc:gb/dev.cartridge.game/super-mario-land";
+        using var h = await Harness.OnlineAsync();
+        await h.HelloAsync();
+        h.Approve();
+
+        await CreatePlayAsync(h, g1, "below", 800, ended: false);              // < threshold
+        var match = await CreatePlayAsync(h, g1, "match", 909500, ended: true); // closest at/above
+        await CreatePlayAsync(h, g1, "higher", 1500000, ended: false);         // above, but further away
+
+        var plays = (JsonArray)(await h.SendAsync(
+            $"{{\"cmd\":\"plays.list\",\"game\":\"{g1}\",\"metric\":\"score\",\"value\":909000}}"))["plays"]!;
+
+        Assert.Single(plays);
+        Assert.Equal(match, plays[0]!["rkey"]!.GetValue<string>());
+        Assert.Equal("909500", plays[0]!["value"]!.ToJsonString());
+        Assert.Equal("succeeded", plays[0]!["outcome"]!["type"]!.GetValue<string>()); // game reads it to decide
+    }
+
+    [Fact]
+    public async Task Outcome_clear_un_ends_a_play()
+    {
+        using var h = await Harness.OnlineAsync();
+        await h.HelloAsync();
+        h.Approve();
+        var rkey = Str(await h.SendAsync(OpenLine), "rkey");
+
+        await h.SendAsync("{\"cmd\":\"metric.set\",\"name\":\"score\",\"value\":100}");
+        await h.SendAsync("{\"cmd\":\"outcome.set\",\"type\":\"abandoned\"}");
+        await h.SendAsync("{\"cmd\":\"commit\"}"); // terminal → published with the outcome
+        Assert.Equal("abandoned",
+            ((JsonObject)h.Pds.Stored(PlaySession.Collection, rkey)!.Value.value)["outcome"]!["type"]!.GetValue<string>());
+
+        await h.SendAsync("{\"cmd\":\"outcome.clear\"}");
+        h.Clock.Advance(System.TimeSpan.FromSeconds(61)); // subsequent write → past the interval
+        await h.SendAsync("{\"cmd\":\"commit\"}");
+
+        var resumed = (JsonObject)h.Pds.Stored(PlaySession.Collection, rkey)!.Value.value;
+        Assert.Null(resumed["outcome"]); // resumable again
     }
 
     [Fact]

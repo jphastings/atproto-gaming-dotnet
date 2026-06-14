@@ -206,6 +206,14 @@ namespace ByJP.AtprotoGaming.Core
             return Record(op);
         }
 
+        /// <summary>
+        /// Clears the top-level <c>outcome</c>, marking a play that was recorded as ended
+        /// (eg. <c>abandoned</c> when an emulator save-state was closed) as in progress
+        /// again, so it can be resumed. Leaves <c>endedAt</c>/<c>duration</c> untouched.
+        /// Idempotent.
+        /// </summary>
+        public PlayUpdate ClearOutcome() => Record(new JsonObject { ["op"] = "clearOutcome" });
+
         /// <summary>Sets <c>participants[]</c> to the given other players, replacing any previous list.</summary>
         public PlayUpdate SetParticipants(IEnumerable<JsonObject> participants)
         {

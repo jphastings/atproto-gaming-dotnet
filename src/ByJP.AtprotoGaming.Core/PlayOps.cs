@@ -70,6 +70,10 @@ namespace ByJP.AtprotoGaming.Core
                         break;
                     }
 
+                    case "clearOutcome":
+                        record.Remove("outcome"); // idempotent: a no-op once already cleared
+                        break;
+
                     case "setParticipants":
                     {
                         var array = new JsonArray();

@@ -39,11 +39,12 @@ stay in the library, **never** re-implemented at the edge. The wire vocabulary m
 - **`open` doesn't write.** It opens the session + timestamps `OpenedUtc`. `hello`'s
   `client` is required and validated as `name/version`, folded into `versions.additional`
   (alongside the package entry) on the first write.
-- **`plays.list` (read query).** Lists the player's un-ended plays for a `game` (via
-  `listRecords`, paginated) with each rkey + an optional named metric value, newest
-  first — lets a seedless game pick a run to resume. Read-only: needs a DID
-  (`_client.Auth.Did`) but **not** approval; `unavailable` if not signed in / PDS
-  unreachable.
+- **`plays.list` (read query).** Lists the player's plays for a `game` (all of them, via
+  `listRecords`, paginated), each with rkey, timestamps, `outcome`, and an optional named
+  metric value. With a `value` threshold it returns the single closest play at-or-above it
+  (the save-state match), leaving the game to read the outcome and decide. Read-only: needs
+  a DID (`_client.Auth.Did`) but **not** approval; `unavailable` if not signed in / PDS
+  unreachable. Pairs with `outcome.clear` (un-ends a play) to resume a saved run.
 - **No shared secret — pair-once approval.** `hello` carries a self-chosen `clientId`;
   `commit` is gated by `ApprovalService` (only `commit` is gated — `open`/mutations
   buffer freely). An unknown client's first real commit returns `status:"pending"`
@@ -105,8 +106,8 @@ filling `character` once the body spawns) re-dates setup to the end — pin it o
   `state.setup` singleton (so trickle-in fills don't clobber) + `AddModifier(id, name?, value?)`;
   `SetAcquisitions(list)` / `AddAcquisition(item)` (→ `state.acquisition`, dedupe by `instanceId`);
   `RouteArrive(id, instanceId?, name?, arrivedAt?)` / `RouteLeave(id, instanceId?, leftAt?)`
-  (→ `state.routeStop`); `SetOutcome(type, cause?)` and `SetParticipants(list)` (top-level);
-  `Finish(endedAtIso, durationSeconds)`; `CommitAsync()`.
+  (→ `state.routeStop`); `SetOutcome(type, cause?)` / `ClearOutcome()` (un-ends, for resume)
+  and `SetParticipants(list)` (top-level); `Finish(endedAtIso, durationSeconds)`; `CommitAsync()`.
   Generic escape hatch for state types without a typed helper (objective/unlock/discovery/
   partyMember/standing + game-specific): `ReplaceState(type, entry)` (singleton),
   `UpsertState(type, entry)` (keyed), `AppendState(type, entry)` (instanced).

@@ -362,4 +362,30 @@ public class PlayOpsTests
         Assert.Equal(1, Entry(b, PlaySession.MetricType, "score")!["value"]!.GetValue<int>());
         Assert.Equal(2, Entry(b, PlaySession.MetricType, "kills")!["value"]!.GetValue<int>());
     }
+
+    [Fact]
+    public void ClearOutcomeRemovesTheOutcomeAndReAppliesSafely()
+    {
+        // set-then-clear, applied to two records (eg. an offline flush re-applying the
+        // same ops list) must converge to "no outcome" and never throw.
+        var ops = new JsonArray
+        {
+            new JsonObject { ["op"] = "setOutcome", ["type"] = "abandoned" },
+            new JsonObject { ["op"] = "clearOutcome" },
+        };
+        var a = new JsonObject();
+        var b = new JsonObject();
+        PlayOps.Apply(a, ops);
+        PlayOps.Apply(b, ops);
+        Assert.Null(a["outcome"]);
+        Assert.Null(b["outcome"]);
+
+        // Clearing an already-set outcome works; clearing again is a harmless no-op.
+        var ended = new JsonObject();
+        PlayOps.Apply(ended, new JsonArray { new JsonObject { ["op"] = "setOutcome", ["type"] = "succeeded" } });
+        Assert.NotNull(ended["outcome"]);
+        PlayOps.Apply(ended, new JsonArray { new JsonObject { ["op"] = "clearOutcome" } });
+        PlayOps.Apply(ended, new JsonArray { new JsonObject { ["op"] = "clearOutcome" } });
+        Assert.Null(ended["outcome"]);
+    }
 }
