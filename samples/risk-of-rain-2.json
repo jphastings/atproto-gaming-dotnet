@@ -1,168 +1,127 @@
 {
   "$type": "games.gamesgamesgamesgames.experimental.actor.play",
   "game": "at://did:web:gamesgamesgamesgames.games/games.gamesgamesgamesgames.game/3mghhtroxpn2d",
-  "stats": "at://did:plc:ephkzpinhaqcabtkugtbzrwu/games.gamesgamesgamesgames.actor.stats/3mh8wd4af6n2x",
-  "participants": [
-    {
-      "atproto": "did:plc:sy4qmi35imvto5yjhuwdeozk",
-      "steam": "76561198009200312"
-    },
-    {
-      "atproto": "did:plc:re253gupqudlfcugvxhdlr7v",
-      "steam": "76561199436603652"
-    }
-  ],
+  "stats": "at://did:plc:ephkzpinhaqcabtkugtbzrwu/games.gamesgamesgamesgames.actor.stats/3mo3dshdb72tf",
+  "startedAt": "2026-06-12T16:39:43.9209942Z",
+  "updatedAt": "2026-06-12T17:00:42.4823865Z",
+  "endedAt": "2026-06-12T17:00:42.3474232+00:00",
+  "duration": 391,
   "outcome": {
-    "type": "succeeded",
-    "cause": "mithrix"
+    "type": "failed",
+    "cause": "StandardLoss"
+  },
+  "versions": {
+    "game": "1.4.1",
+    "additional": [
+      {
+        "name": "atproto-play-tracking",
+        "version": "0.2.0"
+      },
+      {
+        "name": "atproto-gaming-dotnet",
+        "version": "0.2.0"
+      }
+    ]
   },
   "state": [
     {
       "$type": "games.gamesgamesgamesgames.experimental.state.setup",
-      "mode": "classic",
-      "seed": "8675309420",
-      "character": "engineer",
-      "difficulty": 3,
-      "modifiers": [
-        { "id": "artifact_command", "name": "Artifact of Command" },
-        { "id": "artifact_swarms", "name": "Artifact of Swarms" }
-      ]
+      "seed": "3261688878084608672",
+      "mode": "Run",
+      "character": "HuntressBody",
+      "difficulty": 1
     },
-    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "stage", "value": 6 },
-    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "kills", "value": 1843 },
-    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "goldEarned", "value": 28640 },
-    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "highestDamageHit", "value": 94120 },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.metric",
+      "id": "stopwatch",
+      "value": 391
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.metric",
+      "id": "stageClearCount",
+      "value": 0
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.metric",
+      "id": "hp",
+      "value": -21
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.metric",
+      "id": "level",
+      "value": 4
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.setting",
+      "id": "currentBody",
+      "value": "HuntressBody"
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.metric",
+      "id": "totalKills",
+      "value": 50
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.metric",
+      "id": "highestLevel",
+      "value": 4
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.metric",
+      "id": "goldCollected",
+      "value": 287
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.metric",
+      "id": "totalDamageDealt",
+      "value": 5239
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.metric",
+      "id": "totalDamageTaken",
+      "value": 482
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.metric",
+      "id": "totalItemsCollected",
+      "value": 3
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.setting",
+      "id": "killsAs",
+      "dataValue": {
+        "HuntressBody": 50
+      }
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.setting",
+      "id": "damageDealtAs",
+      "dataValue": {
+        "HuntressBody": 5239
+      }
+    },
     {
       "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
-      "id": "soldiers_syringe",
-      "kind": "common",
-      "name": "Soldier's Syringe",
-      "via": "pickup",
-      "addedAt": "2026-06-05T19:04:51.000Z",
+      "id": "Mushroom",
+      "kind": "item",
+      "useCount": 2,
+      "addedAt": "2026-06-12T17:00:42.3474548+00:00",
       "instanceId": "0"
     },
     {
       "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
-      "id": "lens_makers_glasses",
-      "kind": "common",
-      "name": "Lens-Maker's Glasses",
-      "via": "pickup",
-      "addedAt": "2026-06-05T19:08:20.000Z",
+      "id": "StunChanceOnHit",
+      "kind": "item",
+      "useCount": 1,
+      "addedAt": "2026-06-12T17:00:42.3474580+00:00",
       "instanceId": "1"
     },
     {
-      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
-      "id": "tougher_times",
-      "kind": "common",
-      "name": "Tougher Times",
-      "via": "pickup",
-      "addedAt": "2026-06-05T19:13:02.000Z",
-      "instanceId": "2"
-    },
-    {
-      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
-      "id": "ukulele",
-      "kind": "uncommon",
-      "name": "Ukulele",
-      "via": "pickup",
-      "addedAt": "2026-06-05T19:19:47.000Z",
-      "instanceId": "3"
-    },
-    {
-      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
-      "id": "brilliant_behemoth",
-      "kind": "legendary",
-      "name": "Brilliant Behemoth",
-      "via": "pickup",
-      "addedAt": "2026-06-05T19:27:15.000Z",
-      "instanceId": "4"
-    },
-    {
-      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
-      "id": "dios_best_friend",
-      "kind": "boss",
-      "name": "Dio's Best Friend",
-      "via": "pickup",
-      "addedAt": "2026-06-05T19:34:58.000Z",
-      "instanceId": "5"
-    },
-    {
-      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
-      "id": "the_crowdfunder",
-      "kind": "equipment",
-      "name": "The Crowdfunder",
-      "via": "pickup",
-      "useCount": 9,
-      "addedAt": "2026-06-05T19:41:30.000Z",
-      "instanceId": "6"
-    },
-    {
       "$type": "games.gamesgamesgamesgames.experimental.state.routeStop",
-      "id": "titanic_plains",
-      "name": "Titanic Plains",
-      "arrivedAt": "2026-06-05T19:02:40.000Z",
-      "leftAt": "2026-06-05T19:08:50.000Z",
+      "id": "blackbeach",
+      "arrivedAt": "2026-06-12T16:39:45.5219824+00:00",
+      "leftAt": "2026-06-12T17:00:42.3381749+00:00",
       "instanceId": "0"
-    },
-    {
-      "$type": "games.gamesgamesgamesgames.experimental.state.routeStop",
-      "id": "abandoned_aqueduct",
-      "name": "Abandoned Aqueduct",
-      "arrivedAt": "2026-06-05T19:08:50.000Z",
-      "leftAt": "2026-06-05T19:15:30.000Z",
-      "instanceId": "1"
-    },
-    {
-      "$type": "games.gamesgamesgamesgames.experimental.state.routeStop",
-      "id": "rallypoint_delta",
-      "name": "Rallypoint Delta",
-      "arrivedAt": "2026-06-05T19:15:30.000Z",
-      "leftAt": "2026-06-05T19:22:10.000Z",
-      "instanceId": "2"
-    },
-    {
-      "$type": "games.gamesgamesgamesgames.experimental.state.routeStop",
-      "id": "scorched_acres",
-      "name": "Scorched Acres",
-      "arrivedAt": "2026-06-05T19:22:10.000Z",
-      "leftAt": "2026-06-05T19:29:40.000Z",
-      "instanceId": "3"
-    },
-    {
-      "$type": "games.gamesgamesgamesgames.experimental.state.routeStop",
-      "id": "bazaar_between_time",
-      "name": "Bazaar Between Time",
-      "arrivedAt": "2026-06-05T19:29:40.000Z",
-      "leftAt": "2026-06-05T19:32:05.000Z",
-      "instanceId": "4"
-    },
-    {
-      "$type": "games.gamesgamesgamesgames.experimental.state.routeStop",
-      "id": "sky_meadow",
-      "name": "Sky Meadow",
-      "arrivedAt": "2026-06-05T19:32:05.000Z",
-      "leftAt": "2026-06-05T19:40:20.000Z",
-      "instanceId": "5"
-    },
-    {
-      "$type": "games.gamesgamesgamesgames.experimental.state.routeStop",
-      "id": "commencement",
-      "name": "Commencement",
-      "arrivedAt": "2026-06-05T19:40:20.000Z",
-      "leftAt": "2026-06-05T19:48:10.000Z",
-      "instanceId": "6"
     }
-  ],
-  "startedAt": "2026-06-05T19:02:33.000Z",
-  "updatedAt": "2026-06-05T19:48:12.094Z",
-  "endedAt": "2026-06-05T19:48:10.412Z",
-  "duration": 2487,
-  "versions": {
-    "game": "1.3.8",
-    "additional": [
-      { "name": "ror2-atproto", "version": "0.5.0" },
-      { "name": "BepInEx", "version": "5.4.23.2" },
-      { "name": "atproto-gaming-dotnet", "version": "0.0.1" }
-    ]
-  }
+  ]
 }
