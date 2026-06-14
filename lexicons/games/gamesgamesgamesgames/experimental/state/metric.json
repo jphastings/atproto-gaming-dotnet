@@ -1,0 +1,55 @@
+{
+	"lexicon": 1,
+	"id": "games.gamesgamesgamesgames.experimental.state.metric",
+	"defs": {
+		"main": {
+			"type": "object",
+			"description": "A named, game-specific progress indicator (eg. health, gold, kills, score), accurate at the play record's `updatedAt` timestamp, for use in a play record's `state` array. Cardinality: keyed — unique per ($type, id); writers upsert by `id`.",
+			"required": [
+				"id",
+				"value"
+			],
+			"properties": {
+				"id": {
+					"type": "string",
+					"description": "Stable, game-defined camelCase identifier for this metric (eg. `stagesCleared`). Language-independent and consistent across play-throughs & game versions."
+				},
+				"name": {
+					"type": "string",
+					"description": "Human-readable display name in the locale active at write time. Optional, but recommended so renderers without a localised mapping of `id` can fall back to displaying this."
+				},
+				"value": {
+					"type": "integer",
+					"description": "The metric's current value. The atproto data model has no floating-point numbers; use `scale` for fixed-point values."
+				},
+				"scale": {
+					"type": "integer",
+					"minimum": 0,
+					"description": "Power-of-ten divisor for fixed-point values: the real value is `value / 10^scale` (eg. value=1234, scale=2 → 12.34). Omit for plain integers."
+				},
+				"unit": {
+					"type": "string",
+					"description": "Optional unit hint for display (eg. `gold`, `%`, `seconds`)."
+				},
+				"kind": {
+					"type": "string",
+					"description": "Broad category hint for renderers.",
+					"knownValues": [
+						"count",
+						"currency",
+						"score",
+						"level"
+					]
+				},
+				"extra": {
+					"type": "array",
+					"items": {
+						"type": "union",
+						"description": "Game-specific lexicons that can hold additional information about this metric.",
+						"refs": []
+					}
+				}
+			}
+		}
+	}
+}

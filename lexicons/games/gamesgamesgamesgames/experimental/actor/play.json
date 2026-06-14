@@ -1,0 +1,204 @@
+{
+	"lexicon": 1,
+	"id": "games.gamesgamesgamesgames.experimental.actor.play",
+	"defs": {
+		"main": {
+			"type": "record",
+			"description": "A single play-through of a game, updated as it progresses. The rkey should be consistent between saves (eg. for rogue-likes, derived deterministically from the start time and the game seed, or a lineage-based save ID) so that updates target the same record, and multiplayer participants writing to their own PDSs converge on the same rkey.",
+			"key": "any",
+			"record": {
+				"type": "object",
+				"required": [
+					"game",
+					"stats",
+					"startedAt",
+					"updatedAt",
+					"versions"
+				],
+				"properties": {
+					"game": {
+						"type": "string",
+						"format": "at-uri",
+						"description": "AT-URI of the `games.gamesgamesgamesgames.game` record this for the game being played."
+					},
+					"stats": {
+						"type": "string",
+						"format": "at-uri",
+						"description": "AT-URI of the player's `games.gamesgamesgamesgames.actor.stats` record for this game, updated alongside finished runs."
+					},
+					"id": {
+						"type": "string",
+						"description": "An optional ID for this playthrough, used by games with forkable saves to let them find & use the correct record of this lexicon for updates."
+					},
+					"forkedFrom": {
+						"type": "ref",
+						"description": "If the game allows save forking and this record represents progress after a forked save, this should point to the `games.gamesgamesgamesgames.experimental.actor.play` record of the previous save.",
+						"ref": "com.atproto.repo.strongRef"
+					},
+					"participants": {
+						"type": "array",
+						"description": "Other participants in a multiplayer run. Because the rkey is derived consistently across all participants, each entry's record can be fetched easily with `(participantDID, games.gamesgamesgamesgames.experimental.actor.play, rkey)`.",
+						"items": {
+							"type": "ref",
+							"ref": "#participant"
+						}
+					},
+					"state": {
+						"type": "array",
+						"description": "Typed entries describing this play-through's state: setup, settings, metrics, acquisitions, route, objectives, unlocks and more. Games compose the entry types relevant to them, and may introduce their own via the open union. An entry type's cardinality and merge key are implied by its shape — types declaring both `id` and `instanceId` fields are instanced (unique per ($type, id, instanceId), appended in order); types declaring `id` but not `instanceId` are keyed (unique per ($type, id), upserted by id); types declaring neither are singletons (at most one entry per $type, replaced wholesale). Writers must respect these merge semantics so that concurrent and replayed updates converge. Entries are kept in last-edited order — oldest-touched first, most-recently-written last (every write re-appends its entry at the end) — so an entry written once stays near the front. This ordering is advisory; for ordered data such as a route, rely on an entry's own timestamps/sequence rather than array position.",
+						"items": {
+							"type": "union",
+							"closed": false,
+							"refs": [
+								"games.gamesgamesgamesgames.experimental.state.setup",
+								"games.gamesgamesgamesgames.experimental.state.setting",
+								"games.gamesgamesgamesgames.experimental.state.metric",
+								"games.gamesgamesgamesgames.experimental.state.acquisition",
+								"games.gamesgamesgamesgames.experimental.state.routeStop",
+								"games.gamesgamesgamesgames.experimental.state.objective",
+								"games.gamesgamesgamesgames.experimental.state.unlock",
+								"games.gamesgamesgamesgames.experimental.state.discovery",
+								"games.gamesgamesgamesgames.experimental.state.partyMember",
+								"games.gamesgamesgamesgames.experimental.state.standing"
+							]
+						}
+					},
+					"outcome": {
+						"type": "ref",
+						"description": "How the play-through ended. Unset while the run is still in progress.",
+						"ref": "#outcome"
+					},
+					"startedAt": {
+						"type": "string",
+						"format": "datetime",
+						"description": "Wall-clock time the run began."
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "datetime",
+						"description": "Wall-clock time this record was last written. May be later than `endedAt` if a final update is written after the run concludes."
+					},
+					"endedAt": {
+						"type": "string",
+						"format": "datetime",
+						"description": "Wall-clock time the player stopped playing. Unset while the run is still in progress."
+					},
+					"duration": {
+						"type": "integer",
+						"minimum": 0,
+						"description": "Seconds the player spent actively playing this run. May be shorter than `endedAt - startedAt` if the game was paused or save-and-quitted between sessions."
+					},
+					"versions": {
+						"type": "ref",
+						"description": "Version numbers for the game, mods, and this atproto core.",
+						"ref": "#versions"
+					},
+					"signatures": {
+						"type": "array",
+						"description": "Optional CID-first inline attestations over this record, in the badge.blue style (https://badge.blue/).",
+						"items": {
+							"type": "ref",
+							"ref": "#signature"
+						}
+					}
+				}
+			}
+		},
+		"participant": {
+			"type": "object",
+			"description": "Another player observed in a multiplayer run. At least one of `atproto` or `steam` should be set. `atproto` may be backfilled later (e.g. via `dev.keytrace.reverseLookup`) once it can be resolved from the platform id.",
+			"properties": {
+				"atproto": {
+					"type": "string",
+					"format": "did",
+					"description": "Atproto DID of the participant, when known."
+				},
+				"steam": {
+					"type": "string",
+					"description": "SteamID64 of the participant as a decimal string, when playing on Steam."
+				}
+			}
+		},
+		"outcome": {
+			"type": "object",
+			"description": "If the play-through ended, how it ended. Absent implies in-progress, but if a backlink to a `forkedFrom` is present it may just be obsolete.",
+			"properties": {
+				"type": {
+					"type": "string",
+					"description": "The high-level outcome of the play-through. The free text `outcomeCause` can be used in conjunction.",
+					"knownValues": [
+						"failed",
+						"abandoned",
+						"succeeded"
+					]
+				},
+				"cause": {
+					"type": "string",
+					"description": "Additional game-specific context about the outcome type, eg. the id of the boss who defeated the player."
+				}
+			}
+		},
+		"versions": {
+			"type": "object",
+			"required": [
+				"game"
+			],
+			"properties": {
+				"game": {
+					"type": "string",
+					"description": "The version string of the game itself"
+				},
+				"additional": {
+					"type": "array",
+					"description": "Other software running with the game, eg. mods or an atproto gaming core",
+					"items": {
+						"type": "ref",
+						"ref": "#softwareVersion"
+					}
+				}
+			}
+		},
+		"softwareVersion": {
+			"type": "object",
+			"required": [
+				"name",
+				"version"
+			],
+			"description": "A named piece of software, and its version number",
+			"properties": {
+				"name": {
+					"type": "string",
+					"description": "Name of the piece of software"
+				},
+				"version": {
+					"type": "string",
+					"description": "Its version number"
+				}
+			}
+		},
+		"signature": {
+			"type": "object",
+			"description": "A single CID-first inline attestation, in badge.blue fiorm (https://badge.blue/).",
+			"required": [
+				"cid",
+				"key",
+				"signature"
+			],
+			"properties": {
+				"cid": {
+					"type": "string",
+					"format": "cid",
+					"description": "CIDv1 (DAG-CBOR, SHA-256) of this record serialised with the `signatures` field removed."
+				},
+				"key": {
+					"type": "string",
+					"description": "The signer's public key as a `did:key` (P-256 / secp256r1), used to verify `signature`."
+				},
+				"signature": {
+					"type": "bytes",
+					"description": "ECDSA P-256 signature over the bytes of `cid`, normalised to low-S form."
+				}
+			}
+		}
+	}
+}

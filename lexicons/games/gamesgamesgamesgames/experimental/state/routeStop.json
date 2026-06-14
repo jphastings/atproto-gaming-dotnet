@@ -1,0 +1,50 @@
+{
+	"lexicon": 1,
+	"id": "games.gamesgamesgamesgames.experimental.state.routeStop",
+	"defs": {
+		"main": {
+			"type": "object",
+			"description": "A single stop along the route through a play-through (eg. a map node, level, region, or encounter), for use in a play record's `state` array. Cardinality: instanced — unique per ($type, id, instanceId); writers append in visit order and dedupe by `instanceId` when present. When `seq` or `arrivedAt` is present it is the authoritative ordering; array order is the fallback.",
+			"required": [
+				"id"
+			],
+			"properties": {
+				"id": {
+					"type": "string",
+					"description": "Stable, game-defined identifier for this stop. Language-independent and consistent across play-throughs & game versions if possible."
+				},
+				"name": {
+					"type": "string",
+					"description": "Human-readable display name, in the locale active at write time. Optional, but recommended so renderers without a localised mapping of `id` can fall back to displaying this."
+				},
+				"seq": {
+					"type": "integer",
+					"minimum": 0,
+					"description": "Monotonic sequence number of this stop within the run, when the game tracks one. Authoritative ordering when present."
+				},
+				"arrivedAt": {
+					"type": "string",
+					"format": "datetime",
+					"description": "Wall-clock time the player arrived at this stop."
+				},
+				"leftAt": {
+					"type": "string",
+					"format": "datetime",
+					"description": "Wall-clock time the player left this stop. Unset while this is the current stop."
+				},
+				"instanceId": {
+					"type": "string",
+					"description": "An optional unique identifier, eg. a uuid, for this specific instance of a route stop. Will prevent accidental duplicate items due to game crashes, and allow updates to specific entries if there are more than one of the same."
+				},
+				"extra": {
+					"type": "array",
+					"items": {
+						"type": "union",
+						"description": "Game-specific lexicons that can hold additional information about this stop.",
+						"refs": []
+					}
+				}
+			}
+		}
+	}
+}

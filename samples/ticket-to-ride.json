@@ -1,8 +1,8 @@
 {
-  "$type": "games.gamesgamesgamesgames.actor.play",
+  "$type": "games.gamesgamesgamesgames.experimental.actor.play",
   "game": "at://did:web:gamesgamesgamesgames.games/games.gamesgamesgamesgames.game/3mgkepr4oq22l",
   "stats": "at://did:plc:ephkzpinhaqcabtkugtbzrwu/games.gamesgamesgamesgames.actor.stats/3mgktp4ra8n2m",
-  "playingWith": [
+  "participants": [
     {
       "atproto": "did:plc:sy4qmi35imvto5yjhuwdeozk",
       "steam": "76561198009200312"
@@ -12,64 +12,53 @@
       "steam": "76561199436603652"
     }
   ],
-  "settings": {
-    "mode": "classic",
-    "map": "usa",
-    "color": "blue"
+  "outcome": {
+    "type": "succeeded",
+    "cause": "highest_score"
   },
-  "progress": {
-    "routes": [
-      "los_angeles-phoenix",
-      "phoenix-denver",
-      "denver-kansas_city",
-      "kansas_city-saint_louis",
-      "saint_louis-chicago",
-      "chicago-pittsburgh",
-      "kansas_city-oklahoma_city",
-      "oklahoma_city-dallas",
-      "dallas-houston"
-    ],
-    "outcome": {
-      "type": "succeeded",
-      "cause": "highest_score"
-    },
-    "finalScore": 57,
-    "trainsRemaining": 21,
-    "achievedTickets": [
-      "los_angeles-chicago",
-      "denver-pittsburgh",
-      "kansas_city-houston"
-    ]
-  },
-  "acquisitions": [
+  "state": [
+    { "$type": "games.gamesgamesgamesgames.experimental.state.setup", "mode": "classic" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "finalScore", "value": 57 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "trainsRemaining", "value": 21 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.setting", "id": "map", "value": "usa" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.setting", "id": "color", "value": "blue" },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.objective",
       "id": "los_angeles-chicago",
-      "kind": "ticket",
       "name": "Los Angeles → Chicago",
-      "addedAt": "2026-06-02T20:00:30.000Z"
+      "status": "completed",
+      "acceptedAt": "2026-06-02T20:00:30.000Z"
     },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.objective",
       "id": "denver-pittsburgh",
-      "kind": "ticket",
       "name": "Denver → Pittsburgh",
-      "addedAt": "2026-06-02T20:00:30.000Z"
+      "status": "completed",
+      "acceptedAt": "2026-06-02T20:00:30.000Z"
     },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.objective",
       "id": "kansas_city-houston",
-      "kind": "ticket",
       "name": "Kansas City → Houston",
-      "addedAt": "2026-06-02T20:14:20.000Z"
+      "status": "completed",
+      "acceptedAt": "2026-06-02T20:14:20.000Z"
     },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.objective",
       "id": "seattle-los_angeles",
-      "kind": "ticket",
       "name": "Seattle → Los Angeles",
-      "addedAt": "2026-06-02T20:22:40.000Z"
-    }
+      "status": "failed",
+      "acceptedAt": "2026-06-02T20:22:40.000Z"
+    },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "los_angeles-phoenix", "kind": "route", "name": "Los Angeles → Phoenix", "via": "pickup", "instanceId": "0" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "phoenix-denver", "kind": "route", "name": "Phoenix → Denver", "via": "pickup", "instanceId": "1" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "denver-kansas_city", "kind": "route", "name": "Denver → Kansas City", "via": "pickup", "instanceId": "2" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "kansas_city-saint_louis", "kind": "route", "name": "Kansas City → Saint Louis", "via": "pickup", "instanceId": "3" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "saint_louis-chicago", "kind": "route", "name": "Saint Louis → Chicago", "via": "pickup", "instanceId": "4" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "chicago-pittsburgh", "kind": "route", "name": "Chicago → Pittsburgh", "via": "pickup", "instanceId": "5" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "kansas_city-oklahoma_city", "kind": "route", "name": "Kansas City → Oklahoma City", "via": "pickup", "instanceId": "6" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "oklahoma_city-dallas", "kind": "route", "name": "Oklahoma City → Dallas", "via": "pickup", "instanceId": "7" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "dallas-houston", "kind": "route", "name": "Dallas → Houston", "via": "pickup", "instanceId": "8" }
   ],
   "startedAt": "2026-06-02T20:00:00.000Z",
   "updatedAt": "2026-06-02T20:29:02.350Z",
@@ -78,14 +67,8 @@
   "versions": {
     "game": "2.7.12",
     "additional": [
-      {
-        "name": "ttr-atproto",
-        "version": "0.2.0"
-      },
-      {
-        "name": "atproto-gaming-dotnet",
-        "version": "0.0.1"
-      }
+      { "name": "ttr-atproto", "version": "0.2.0" },
+      { "name": "atproto-gaming-dotnet", "version": "0.0.1" }
     ]
   }
 }

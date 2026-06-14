@@ -1,0 +1,61 @@
+{
+	"lexicon": 1,
+	"id": "games.gamesgamesgamesgames.experimental.state.partyMember",
+	"defs": {
+		"main": {
+			"type": "object",
+			"description": "A character, companion, or squad member in the player's party, for use in a play record's `state` array. For other human players, use the play record's `participants` field instead. Cardinality: instanced — unique per ($type, id, instanceId); writers append in join order and dedupe by `instanceId` when present.",
+			"required": [
+				"id"
+			],
+			"properties": {
+				"id": {
+					"type": "string",
+					"description": "Stable, game-defined identifier for this party member (eg. a character or companion id). Language-independent and consistent across play-throughs & game versions."
+				},
+				"name": {
+					"type": "string",
+					"description": "Human-readable display name in the locale active at write time (eg. a nickname the player gave this member). Optional, but recommended so renderers without a localised mapping of `id` can fall back to displaying this."
+				},
+				"role": {
+					"type": "string",
+					"description": "The member's class or role in the party (eg. `healer`, `warrior`)."
+				},
+				"level": {
+					"type": "integer",
+					"minimum": 0,
+					"description": "The member's current level, for games with levelling."
+				},
+				"equipment": {
+					"type": "array",
+					"description": "Identifiers of items currently equipped by this member, matching the `id` or `instanceId` of `games.gamesgamesgamesgames.experimental.state.acquisition` entries in the same state array.",
+					"items": {
+						"type": "string"
+					}
+				},
+				"joinedAt": {
+					"type": "string",
+					"format": "datetime",
+					"description": "Wall-clock time this member joined the party."
+				},
+				"leftAt": {
+					"type": "string",
+					"format": "datetime",
+					"description": "Wall-clock time this member left the party (dismissed, died permanently). Unset while still in the party."
+				},
+				"instanceId": {
+					"type": "string",
+					"description": "An optional unique identifier, eg. a uuid, for this specific instance of a party member. Will prevent accidental duplicates due to game crashes, and allows the same character to appear more than once."
+				},
+				"extra": {
+					"type": "array",
+					"items": {
+						"type": "union",
+						"description": "Game-specific lexicons that can hold additional information about this party member.",
+						"refs": []
+					}
+				}
+			}
+		}
+	}
+}

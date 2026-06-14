@@ -60,7 +60,7 @@ public class TidTests
     public void FromAtUriExtractsTrailingRkey()
     {
         var rkey = Tid.FromPlayThrough(1_700_000_000, "seed");
-        var uri = $"at://did:plc:abc/games.gamesgamesgamesgames.actor.play/{rkey}";
+        var uri = $"at://did:plc:abc/games.gamesgamesgamesgames.experimental.actor.play/{rkey}";
         Assert.Equal(rkey, Tid.FromAtUri(uri));
     }
 

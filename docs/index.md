@@ -43,7 +43,7 @@ atproto.Auth.Changed += () => UpdateBadge(atproto.Auth.Status, atproto.Auth.Erro
 
 // Publish a play-through under a stable, resume-safe record key.
 var rkey = Tid.FromPlayThrough(startedAtUnixSeconds, runSeed);
-await atproto.Records.PutAsync("games.gamesgamesgamesgames.actor.play", rkey, playRecord);
+await atproto.Records.PutAsync("games.gamesgamesgamesgames.experimental.actor.play", rkey, playRecord);
 ```
 
 ## Where to next

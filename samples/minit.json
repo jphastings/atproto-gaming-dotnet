@@ -1,111 +1,125 @@
 {
-  "$type": "games.gamesgamesgamesgames.actor.play",
+  "$type": "games.gamesgamesgamesgames.experimental.actor.play",
   "game": "at://did:web:gamesgamesgamesgames.games/games.gamesgamesgamesgames.game/3mghfmmlhx52d",
   "stats": "at://did:plc:ephkzpinhaqcabtkugtbzrwu/games.gamesgamesgamesgames.actor.stats/3mh9p2adf7n2r",
-  "settings": {
-    "mode": "normal"
+  "outcome": {
+    "type": "succeeded",
+    "cause": "factory_destroyed"
   },
-  "progress": {
-    "route": [
-      {
-        "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
-        "id": "home",
-        "name": "Home",
-        "startedAt": "2026-06-03T18:40:00.000Z",
-        "endedAt": "2026-06-03T18:42:00.000Z"
-      },
-      {
-        "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
-        "id": "beach",
-        "name": "Beach",
-        "startedAt": "2026-06-03T18:42:00.000Z",
-        "endedAt": "2026-06-03T19:18:00.000Z"
-      },
-      {
-        "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
-        "id": "factory",
-        "name": "Factory",
-        "startedAt": "2026-06-03T19:18:00.000Z",
-        "endedAt": "2026-06-03T20:01:00.000Z"
-      },
-      {
-        "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
-        "id": "desert",
-        "name": "Desert",
-        "startedAt": "2026-06-04T17:14:00.000Z",
-        "endedAt": "2026-06-04T18:12:00.000Z"
-      },
-      {
-        "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
-        "id": "hotel",
-        "name": "Hotel",
-        "startedAt": "2026-06-05T19:08:00.000Z",
-        "endedAt": "2026-06-05T19:46:00.000Z"
-      },
-      {
-        "$type": "games.gamesgamesgamesgames.actor.play#routeStop",
-        "id": "island",
-        "name": "Island",
-        "startedAt": "2026-06-05T19:46:00.000Z",
-        "endedAt": "2026-06-05T20:12:34.500Z"
-      }
-    ],
-    "outcome": {
-      "type": "succeeded",
-      "cause": "factory_destroyed"
-    },
-    "deaths": 88,
-    "itemsCollected": 18
-  },
-  "acquisitions": [
+  "state": [
+    { "$type": "games.gamesgamesgamesgames.experimental.state.setup", "mode": "normal" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "deaths", "value": 88 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "itemsCollected", "value": 18 },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "sword",
       "kind": "weapon",
       "name": "Sword",
-      "addedAt": "2026-06-03T18:42:30.000Z"
+      "via": "pickup",
+      "addedAt": "2026-06-03T18:42:30.000Z",
+      "instanceId": "0"
     },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "coffee",
       "kind": "item",
       "name": "Coffee",
-      "addedAt": "2026-06-03T19:05:12.000Z"
+      "via": "pickup",
+      "addedAt": "2026-06-03T19:05:12.000Z",
+      "instanceId": "1"
     },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "watering_can",
       "kind": "item",
       "name": "Watering Can",
-      "addedAt": "2026-06-03T19:48:40.000Z"
+      "via": "pickup",
+      "addedAt": "2026-06-03T19:48:40.000Z",
+      "instanceId": "2"
     },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "key",
       "kind": "key",
       "name": "Key",
-      "addedAt": "2026-06-04T17:20:05.000Z"
+      "via": "pickup",
+      "addedAt": "2026-06-04T17:20:05.000Z",
+      "instanceId": "3"
     },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "swim_fins",
       "kind": "item",
       "name": "Swim Fins",
-      "addedAt": "2026-06-04T18:02:33.000Z"
+      "via": "pickup",
+      "addedAt": "2026-06-04T18:02:33.000Z",
+      "instanceId": "4"
     },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "press_pass",
       "kind": "key",
       "name": "Press Pass",
-      "addedAt": "2026-06-05T19:15:50.000Z"
+      "via": "pickup",
+      "addedAt": "2026-06-05T19:15:50.000Z",
+      "instanceId": "5"
     },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "lighthouse_key",
       "kind": "key",
       "name": "Lighthouse Key",
-      "addedAt": "2026-06-05T19:58:10.000Z"
+      "via": "pickup",
+      "addedAt": "2026-06-05T19:58:10.000Z",
+      "instanceId": "6"
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.routeStop",
+      "id": "home",
+      "name": "Home",
+      "arrivedAt": "2026-06-03T18:40:00.000Z",
+      "leftAt": "2026-06-03T18:42:00.000Z",
+      "instanceId": "0"
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.routeStop",
+      "id": "beach",
+      "name": "Beach",
+      "arrivedAt": "2026-06-03T18:42:00.000Z",
+      "leftAt": "2026-06-03T19:18:00.000Z",
+      "instanceId": "1"
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.routeStop",
+      "id": "factory",
+      "name": "Factory",
+      "arrivedAt": "2026-06-03T19:18:00.000Z",
+      "leftAt": "2026-06-03T20:01:00.000Z",
+      "instanceId": "2"
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.routeStop",
+      "id": "desert",
+      "name": "Desert",
+      "arrivedAt": "2026-06-04T17:14:00.000Z",
+      "leftAt": "2026-06-04T18:12:00.000Z",
+      "instanceId": "3"
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.routeStop",
+      "id": "hotel",
+      "name": "Hotel",
+      "arrivedAt": "2026-06-05T19:08:00.000Z",
+      "leftAt": "2026-06-05T19:46:00.000Z",
+      "instanceId": "4"
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.routeStop",
+      "id": "island",
+      "name": "Island",
+      "arrivedAt": "2026-06-05T19:46:00.000Z",
+      "leftAt": "2026-06-05T20:12:34.500Z",
+      "instanceId": "5"
     }
   ],
   "startedAt": "2026-06-03T18:40:00.000Z",
@@ -115,14 +129,8 @@
   "versions": {
     "game": "1.7.3",
     "additional": [
-      {
-        "name": "minit-atproto",
-        "version": "0.1.0"
-      },
-      {
-        "name": "atproto-gaming-dotnet",
-        "version": "0.0.1"
-      }
+      { "name": "minit-atproto", "version": "0.1.0" },
+      { "name": "atproto-gaming-dotnet", "version": "0.0.1" }
     ]
   }
 }

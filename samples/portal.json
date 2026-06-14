@@ -1,58 +1,34 @@
 {
-  "$type": "games.gamesgamesgamesgames.actor.play",
+  "$type": "games.gamesgamesgamesgames.experimental.actor.play",
   "game": "at://did:web:gamesgamesgamesgames.games/games.gamesgamesgamesgames.game/3mghbbtp46f2d",
   "stats": "at://did:plc:ephkzpinhaqcabtkugtbzrwu/games.gamesgamesgamesgames.actor.stats/3mh7r2af8nt2k",
-  "settings": {
-    "mode": "story"
+  "outcome": {
+    "type": "succeeded",
+    "cause": "glados-destroyed"
   },
-  "progress": {
-    "route": [
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:00", "name": "Test Chamber 00" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:01", "name": "Test Chamber 01" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:02", "name": "Test Chamber 02" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:03", "name": "Test Chamber 03" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:04", "name": "Test Chamber 04" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:05", "name": "Test Chamber 05" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:06", "name": "Test Chamber 06" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:07", "name": "Test Chamber 07" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:08", "name": "Test Chamber 08" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:09", "name": "Test Chamber 09" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:10", "name": "Test Chamber 10" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:11", "name": "Test Chamber 11" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:12", "name": "Test Chamber 12" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:13", "name": "Test Chamber 13" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:14", "name": "Test Chamber 14" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:15", "name": "Test Chamber 15" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:16", "name": "Test Chamber 16" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:17", "name": "Test Chamber 17" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:18", "name": "Test Chamber 18" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "chamber:19", "name": "Test Chamber 19" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "escape", "name": "Escape" },
-      { "$type": "games.gamesgamesgamesgames.actor.play#routeStop", "id": "boss:glados", "name": "GLaDOS" }
-    ],
-    "outcome": {
-      "type": "succeeded",
-      "cause": "glados-destroyed"
-    },
-    "chamber": 19,
-    "deaths": 11,
-    "secondsOnFire": 0
-  },
-  "acquisitions": [
+  "state": [
+    { "$type": "games.gamesgamesgamesgames.experimental.state.setup", "mode": "story" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "chamber", "value": 19 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "deaths", "value": 11 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "secondsOnFire", "value": 0 },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "ashpd",
       "kind": "weapon",
       "name": "Aperture Science Handheld Portal Device",
+      "via": "pickup",
       "useCount": 1342,
-      "addedAt": "2026-05-30T20:34:12.000Z"
+      "addedAt": "2026-05-30T20:34:12.000Z",
+      "instanceId": "0"
     },
     {
-      "$type": "games.gamesgamesgamesgames.actor.play#gameItem",
+      "$type": "games.gamesgamesgamesgames.experimental.state.acquisition",
       "id": "weighted_companion_cube",
       "kind": "object",
       "name": "Weighted Companion Cube",
+      "via": "pickup",
       "addedAt": "2026-06-01T22:05:43.000Z",
+      "instanceId": "1",
       "extra": [
         {
           "$type": "com.valvesoftware.portal.object",
@@ -60,7 +36,29 @@
           "incinerated": true
         }
       ]
-    }
+    },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:00", "name": "Test Chamber 00", "instanceId": "0" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:01", "name": "Test Chamber 01", "instanceId": "1" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:02", "name": "Test Chamber 02", "instanceId": "2" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:03", "name": "Test Chamber 03", "instanceId": "3" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:04", "name": "Test Chamber 04", "instanceId": "4" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:05", "name": "Test Chamber 05", "instanceId": "5" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:06", "name": "Test Chamber 06", "instanceId": "6" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:07", "name": "Test Chamber 07", "instanceId": "7" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:08", "name": "Test Chamber 08", "instanceId": "8" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:09", "name": "Test Chamber 09", "instanceId": "9" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:10", "name": "Test Chamber 10", "instanceId": "10" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:11", "name": "Test Chamber 11", "instanceId": "11" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:12", "name": "Test Chamber 12", "instanceId": "12" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:13", "name": "Test Chamber 13", "instanceId": "13" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:14", "name": "Test Chamber 14", "instanceId": "14" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:15", "name": "Test Chamber 15", "instanceId": "15" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:16", "name": "Test Chamber 16", "instanceId": "16" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:17", "name": "Test Chamber 17", "instanceId": "17" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:18", "name": "Test Chamber 18", "instanceId": "18" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "chamber:19", "name": "Test Chamber 19", "instanceId": "19" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "escape", "name": "Escape", "instanceId": "20" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.routeStop", "id": "boss:glados", "name": "GLaDOS", "instanceId": "21" }
   ],
   "startedAt": "2026-05-30T20:11:07.004Z",
   "updatedAt": "2026-06-01T22:47:53.610Z",
@@ -69,14 +67,8 @@
   "versions": {
     "game": "1.0.0.1",
     "additional": [
-      {
-        "name": "portal-atproto",
-        "version": "0.3.2"
-      },
-      {
-        "name": "atproto-gaming-dotnet",
-        "version": "0.0.1"
-      }
+      { "name": "portal-atproto", "version": "0.3.2" },
+      { "name": "atproto-gaming-dotnet", "version": "0.0.1" }
     ]
   }
 }

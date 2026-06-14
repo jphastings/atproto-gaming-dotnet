@@ -16,7 +16,7 @@ Two concrete consumers drive these requirements:
   `../sts2.at/mod/`.
 
 The shared data shape is the
-[`games.gamesgamesgamesgames.actor.play`](../lexicons/games/gamesgamesgamesgames/actor/play.json)
+[`games.gamesgamesgamesgames.experimental.actor.play`](../lexicons/games/gamesgamesgamesgames/experimental/actor/play.json)
 lexicon, alongside the existing public
 `games.gamesgamesgamesgames.actor.stats` record.
 
@@ -243,7 +243,7 @@ Reference: `sts2.at/mod/Config.cs`.
 The package MUST support publishing to multiple collections from the
 same logged-in session:
 
-- `games.gamesgamesgamesgames.actor.play` (the per-play-through record).
+- `games.gamesgamesgamesgames.experimental.actor.play` (the per-play-through record).
 - `games.gamesgamesgamesgames.actor.stats` (the rolling stats record).
 - Game-mod-specific collections (lobby records, achievement logs,
   etc.) for any NSID the consumer chooses.

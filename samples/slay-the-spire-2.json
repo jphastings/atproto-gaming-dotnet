@@ -1,0 +1,149 @@
+{
+  "$type": "games.gamesgamesgamesgames.experimental.actor.play",
+  "game": "at://did:web:gamesgamesgamesgames.games/games.gamesgamesgamesgames.game/3mglj4k2edl2l",
+  "stats": "at://did:plc:ephkzpinhaqcabtkugtbzrwu/games.gamesgamesgamesgames.actor.stats/3mjrmxutfln2h",
+  "participants": [
+    {
+      "atproto": "did:plc:re253gupqudlfcugvxhdlr7v",
+      "steam": "76561199436603652"
+    }
+  ],
+  "outcome": {
+    "type": "failed",
+    "cause": "death"
+  },
+  "state": [
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.setup",
+      "seed": "AXK36RTM4T",
+      "character": "silent",
+      "difficulty": 0
+    },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "act", "value": 2 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "floor", "value": 22 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "maxHp", "value": 90 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "turns", "value": 6 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "deaths", "value": 1 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "combats", "value": 1 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "killCount", "value": 1 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "cardsDrawn", "value": 71 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "goldEarned", "value": 335 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "cardsPlayed", "value": 41 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "damageDealt", "value": 198 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "damageTaken", "value": 45 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "goldCurrent", "value": 68 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "potionsUsed", "value": 1 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "longestCombat", "value": 6 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "noDamageTurns", "value": 2 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "cardsExhausted", "value": 8 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "healingReceived", "value": 216 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "biggestDamageDealt", "value": 51 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "biggestDamageTaken", "value": 19 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "highestBlockInTurn", "value": 13 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "biggestTurnDamageDealt", "value": 67 },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.metric", "id": "biggestTurnDamageTaken", "value": 16 },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.setting",
+      "id": "cardUseDistribution",
+      "dataValue": {
+        "haze": 1,
+        "poke": 1,
+        "snap": 1,
+        "scare": 1,
+        "rattle": 1,
+        "sic_em": 1,
+        "eidolon": 1,
+        "putrefy": 1,
+        "scourge": 1,
+        "footwork": 1,
+        "suppress": 2,
+        "survivor": 1,
+        "tracking": 1,
+        "bodyguard": 1,
+        "omnislice": 1,
+        "protector": 1,
+        "speedster": 1,
+        "dagger_throw": 1,
+        "sucker_punch": 2,
+        "blight_strike": 1,
+        "defend_silent": 4,
+        "strike_silent": 3,
+        "beacon_of_hope": 1,
+        "dodge_and_roll": 2,
+        "negative_pulse": 1,
+        "calculated_gamble": 1,
+        "defend_necrobinder": 5,
+        "strike_necrobinder": 2
+      }
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.setting",
+      "id": "hitsDealtDistribution",
+      "dataValue": {
+        "2": 12,
+        "12": 1,
+        "13": 1,
+        "16": 1,
+        "18": 1,
+        "24": 1,
+        "27": 1,
+        "38": 1,
+        "51": 1
+      }
+    },
+    {
+      "$type": "games.gamesgamesgamesgames.experimental.state.setting",
+      "id": "hitsTakenDistribution",
+      "dataValue": {
+        "2": 2,
+        "6": 1,
+        "7": 1,
+        "9": 1,
+        "12": 1,
+        "19": 3
+      }
+    },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "strike_silent", "kind": "card", "via": "starting", "instanceId": "0" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "strike_silent", "kind": "card", "via": "starting", "instanceId": "1" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "strike_silent", "kind": "card", "via": "starting", "instanceId": "2" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "strike_silent", "kind": "card", "via": "starting", "instanceId": "3" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "defend_silent", "kind": "card", "via": "starting", "instanceId": "4" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "defend_silent", "kind": "card", "via": "starting", "instanceId": "5" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "defend_silent", "kind": "card", "via": "starting", "instanceId": "6" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "defend_silent", "kind": "card", "via": "starting", "instanceId": "7" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "defend_silent", "kind": "card", "via": "starting", "instanceId": "8" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "survivor", "kind": "card", "via": "starting", "instanceId": "9" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "dagger_throw", "kind": "card", "via": "pickup", "instanceId": "10" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "bouncing_flask", "kind": "card", "via": "pickup", "instanceId": "11" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "speedster", "kind": "card", "via": "pickup", "instanceId": "12" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "calculated_gamble", "kind": "card", "via": "pickup", "instanceId": "13" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "scare", "kind": "card", "via": "pickup", "instanceId": "14" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "tracking", "kind": "card", "via": "pickup", "instanceId": "15" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "sucker_punch", "kind": "card", "via": "pickup", "instanceId": "16" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "footwork", "kind": "card", "via": "pickup", "instanceId": "17" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "accelerant", "kind": "card", "via": "pickup", "instanceId": "18" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "suppress/corrupted", "kind": "card", "via": "pickup", "instanceId": "19" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "haze", "kind": "card", "via": "pickup", "instanceId": "20" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "dodge_and_roll", "kind": "card", "via": "pickup", "instanceId": "21" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "serpent_form", "kind": "card", "via": "pickup", "instanceId": "22" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "ring_of_the_snake", "kind": "relic", "via": "starting", "instanceId": "23" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "fishing_rod", "kind": "relic", "via": "pickup", "instanceId": "24" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "stone_cracker", "kind": "relic", "via": "pickup", "instanceId": "25" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "chosen_cheese", "kind": "relic", "via": "pickup", "instanceId": "26" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "red_mask", "kind": "relic", "via": "pickup", "instanceId": "27" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "blood_vial", "kind": "relic", "via": "pickup", "instanceId": "28" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "archaic_tooth", "kind": "relic", "via": "pickup", "instanceId": "29" },
+    { "$type": "games.gamesgamesgamesgames.experimental.state.acquisition", "id": "mango", "kind": "relic", "via": "pickup", "instanceId": "30" }
+  ],
+  "startedAt": "2026-06-09T13:42:10.798Z",
+  "updatedAt": "2026-06-09T14:59:51.803Z",
+  "endedAt": "2026-06-09T14:59:51.798Z",
+  "duration": 4661,
+  "versions": {
+    "game": "0.107.0",
+    "additional": [
+      { "name": "pesos-sts2", "version": "0.16.1" },
+      { "name": "atproto-gaming-dotnet", "version": "0.0.1" }
+    ]
+  }
+}

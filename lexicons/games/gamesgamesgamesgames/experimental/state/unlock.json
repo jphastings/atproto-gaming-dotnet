@@ -1,0 +1,40 @@
+{
+	"lexicon": 1,
+	"id": "games.gamesgamesgamesgames.experimental.state.unlock",
+	"defs": {
+		"main": {
+			"type": "object",
+			"description": "A profile-scoped grant earned during this run that persists beyond it (eg. a roguelike meta unlock: a new character, an item added to the pool, an upgrade bought with meta-currency), for use in a play record's `state` array. Distinguished from `games.gamesgamesgamesgames.experimental.state.acquisition` by lifetime: acquisitions are run-scoped possession, unlocks outlive the run. Cardinality: keyed — unique per ($type, id); writers upsert by `id`.",
+			"required": [
+				"id"
+			],
+			"properties": {
+				"id": {
+					"type": "string",
+					"description": "Stable, game-defined identifier for this unlock. Language-independent and consistent across play-throughs & game versions."
+				},
+				"kind": {
+					"type": "string",
+					"description": "The kind of thing unlocked (eg. `character`, `item`, `upgrade`)."
+				},
+				"name": {
+					"type": "string",
+					"description": "Human-readable display name in the locale active at write time. Optional, but recommended so renderers without a localised mapping of `id` can fall back to displaying this."
+				},
+				"unlockedAt": {
+					"type": "string",
+					"format": "datetime",
+					"description": "Wall-clock time the unlock was earned."
+				},
+				"extra": {
+					"type": "array",
+					"items": {
+						"type": "union",
+						"description": "Game-specific lexicons that can hold additional information about this unlock.",
+						"refs": []
+					}
+				}
+			}
+		}
+	}
+}

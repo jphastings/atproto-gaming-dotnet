@@ -9,9 +9,22 @@ namespace ByJP.AtprotoGaming.Core
     /// Applies a serialized list of play-record changes (built by
     /// <see cref="PlayUpdate"/>) to a record. The ops are pure data so they can be
     /// persisted while offline and re-applied against the freshly-fetched record at
-    /// flush time — which is what makes an offline <c>updateProgress</c> resolve
+    /// flush time — which is what makes an offline <c>updateMetric</c> resolve
     /// against the real value, and instance-keyed appends idempotent across a crash.
     /// </summary>
+    /// <remarks>
+    /// The play record holds a single open-union <c>state[]</c> array of typed
+    /// entries. Each entry's cardinality is set by the op that wrote it, mirroring
+    /// the lexicon's shape convention: <c>singleton</c> (one entry per $type,
+    /// replaced wholesale), <c>keyed</c> (unique per ($type, id), upserted), or
+    /// <c>instanced</c> (unique per ($type, id, instanceId), appended). Every op
+    /// here is safe to apply 2+ times against an evolving base.
+    ///
+    /// <c>state[]</c> is kept in <b>last-edited order</b>: every mutation re-appends
+    /// its entry at the end, so the array runs oldest-touched → newest-touched and an
+    /// entry written once (eg. a setup that's never revised) stays near the front.
+    /// Ordering is advisory — values still converge under replay; only positions shift.
+    /// </remarks>
     internal static class PlayOps
     {
         public static void Apply(JsonObject record, JsonArray ops)
@@ -21,20 +34,24 @@ namespace ByJP.AtprotoGaming.Core
                 var op = (JsonObject)node!;
                 switch (op["op"]!.GetValue<string>())
                 {
-                    case "setProgress":
-                        Obj(record, "progress")[op["name"]!.GetValue<string>()] = op["value"]!.DeepClone();
+                    case "state":
+                        ApplyState(record, op);
                         break;
 
-                    case "updateProgress":
-                        ApplyUpdateProgress(record, op);
+                    case "bumpMetric":
+                        ApplyBumpMetric(record, op);
                         break;
 
                     case "setAcquisitions":
-                        record["acquisitions"] = op["items"]!.DeepClone();
+                        ReplaceAllOfType(State(record), PlaySession.AcquisitionType, (JsonArray)op["items"]!);
                         break;
 
-                    case "addAcquisition":
-                        UpsertById(Arr(record, "acquisitions"), (JsonObject)op["item"]!, "instanceId");
+                    case "setSetup":
+                        MergeSetup(record, (JsonObject)op["fields"]!);
+                        break;
+
+                    case "addModifier":
+                        AddModifier(record, (JsonObject)op["modifier"]!);
                         break;
 
                     case "routeArrive":
@@ -49,20 +66,16 @@ namespace ByJP.AtprotoGaming.Core
                     {
                         var outcome = new JsonObject { ["type"] = op["type"]!.GetValue<string>() };
                         if (op["cause"] is JsonNode cause) outcome["cause"] = cause.GetValue<string>();
-                        Obj(record, "progress")["outcome"] = outcome;
+                        record["outcome"] = outcome;
                         break;
                     }
 
-                    case "setSetting":
-                        Obj(record, "settings")[op["name"]!.GetValue<string>()] = op["value"]!.DeepClone();
-                        break;
-
-                    case "setPlayingWith":
+                    case "setParticipants":
                     {
                         var array = new JsonArray();
                         foreach (var participant in (JsonArray)op["participants"]!)
                             array.Add(participant!.DeepClone());
-                        record["playingWith"] = array;
+                        record["participants"] = array;
                         break;
                     }
 
@@ -77,18 +90,45 @@ namespace ByJP.AtprotoGaming.Core
             }
         }
 
-        private static void ApplyUpdateProgress(JsonObject record, JsonObject op)
+        // A generic state-entry write. The merge mode is set by the PlayUpdate method
+        // that recorded it, matching the entry type's documented cardinality.
+        private static void ApplyState(JsonObject record, JsonObject op)
         {
-            var name = op["name"]!.GetValue<string>();
+            var state = State(record);
+            var type = op["type"]!.GetValue<string>();
+            var entry = (JsonObject)op["entry"]!.DeepClone();
+            entry["$type"] = type;
+
+            switch (op["mode"]!.GetValue<string>())
+            {
+                case "singleton":
+                    RemoveAllOfType(state, type);
+                    state.Add(entry);
+                    break;
+                case "keyed":
+                    UpsertKeyed(state, type, entry);
+                    break;
+                case "instanced":
+                    AppendInstanced(state, type, entry);
+                    break;
+                default:
+                    throw new InvalidOperationException($"unknown state mode: {op["mode"]}");
+            }
+        }
+
+        private static void ApplyBumpMetric(JsonObject record, JsonObject op)
+        {
+            var state = State(record);
+            var id = op["id"]!.GetValue<string>();
             var value = op["value"]!.GetValue<long>();
             var operation = op["operation"]!.GetValue<string>();
-            var progress = Obj(record, "progress");
 
-            bool present = progress[name] is JsonNode;
+            var entry = FindKeyed(state, PlaySession.MetricType, id);
+            bool present = entry?["value"] is JsonNode;
             long current = 0;
-            if (present && !TryGetInteger(progress[name]!, out current))
+            if (present && !TryGetInteger(entry!["value"]!, out current))
                 throw new InvalidOperationException(
-                    $"cannot update progress '{name}': existing value is not an integer");
+                    $"cannot update metric '{id}': existing value is not an integer");
 
             long result;
             switch (operation)
@@ -97,55 +137,195 @@ namespace ByJP.AtprotoGaming.Core
                 case "subtract": result = current - value; break;
                 case "min": result = present ? Math.Min(current, value) : value; break;
                 case "max": result = present ? Math.Max(current, value) : value; break;
-                default: throw new InvalidOperationException($"unknown progress operation: {operation}");
+                default: throw new InvalidOperationException($"unknown metric operation: {operation}");
             }
+
+            if (entry == null)
+                entry = new JsonObject { ["$type"] = PlaySession.MetricType, ["id"] = id };
+            else
+                RemoveFirst(state, n => ReferenceEquals(n, entry)); // detach to re-append at end
 
             // Stay int-backed for normal counters so callers can read GetValue<int>();
             // fall back to long only when it overflows.
-            progress[name] = result >= int.MinValue && result <= int.MaxValue ? (JsonNode)(int)result : result;
+            entry["value"] = result >= int.MinValue && result <= int.MaxValue ? (JsonNode)(int)result : result;
+            state.Add(entry); // bumped entry lands at the end (last-edited ordering)
+        }
+
+        private static void MergeSetup(JsonObject record, JsonObject fields)
+        {
+            var setup = SetupForEdit(State(record));
+            foreach (var field in fields)
+                setup[field.Key] = field.Value?.DeepClone();
+        }
+
+        private static void AddModifier(JsonObject record, JsonObject modifier)
+        {
+            var setup = SetupForEdit(State(record));
+            if (!(setup["modifiers"] is JsonArray modifiers))
+            {
+                modifiers = new JsonArray();
+                setup["modifiers"] = modifiers;
+            }
+            UpsertById(modifiers, modifier, "id");
         }
 
         private static void ApplyRouteArrive(JsonObject record, JsonObject op)
         {
-            var route = Arr(Obj(record, "progress"), "route");
+            var state = State(record);
             var instanceId = op["instanceId"]?.GetValue<string>();
 
-            var existing = instanceId != null ? FindByInstanceId(route, instanceId) : null;
-            var stop = existing ?? NewStop(route, op);
+            var existing = instanceId != null ? FindByInstanceId(state, PlaySession.RouteStopType, instanceId) : null;
+            var stop = existing ?? NewStop(state, op);
             stop["arrivedAt"] = op["arrivedAt"]!.GetValue<string>();
             if (op["name"] is JsonNode name) stop["name"] = name.GetValue<string>();
+            MoveToEnd(state, stop);
         }
 
         private static void ApplyRouteLeave(JsonObject record, JsonObject op)
         {
-            var route = Arr(Obj(record, "progress"), "route");
+            var state = State(record);
             var id = op["id"]!.GetValue<string>();
             var instanceId = op["instanceId"]?.GetValue<string>();
 
             var target = instanceId != null
-                ? FindByInstanceId(route, instanceId)
-                : FindLastOpenStop(route, id);
+                ? FindByInstanceId(state, PlaySession.RouteStopType, instanceId)
+                : FindLastOpenStop(state, id);
 
             if (target != null)
+            {
                 target["leftAt"] = op["leftAt"]!.GetValue<string>();
+                MoveToEnd(state, target);
+            }
             else if (instanceId != null)
                 // Explicit leave-before-arrive: the instanceId pins which stop this is.
-                NewStop(route, op)["leftAt"] = op["leftAt"]!.GetValue<string>();
+                // (NewStop already appends at the end.)
+                NewStop(state, op)["leftAt"] = op["leftAt"]!.GetValue<string>();
             // else: no open stop and no instanceId to pin one — nothing to close.
             // No-op keeps re-apply (CAS retry / offline flush) from minting a phantom
             // stop with a leftAt but no arrivedAt.
         }
 
         // Appends a fresh routeStop seeded with id (+ instanceId) from the op.
-        private static JsonObject NewStop(JsonArray route, JsonObject op)
+        private static JsonObject NewStop(JsonArray state, JsonObject op)
         {
             var stop = new JsonObject { ["$type"] = PlaySession.RouteStopType, ["id"] = op["id"]!.GetValue<string>() };
             if (op["instanceId"] is JsonNode iid) stop["instanceId"] = iid.GetValue<string>();
-            route.Add(stop);
+            state.Add(stop);
             return stop;
         }
 
+        // ── state-array helpers ──────────────────────────────────────────────
+
+        private static JsonArray State(JsonObject record) => Arr(record, "state");
+
+        private static bool IsType(JsonNode? node, string type) =>
+            node is JsonObject obj && obj["$type"]?.GetValue<string>() == type;
+
+        // Upsert keyed by id: drop any existing entry of this type+id, then append —
+        // so the just-written entry lands at the end (last-edited ordering).
+        private static void UpsertKeyed(JsonArray state, string type, JsonObject entry)
+        {
+            var id = entry["id"]?.GetValue<string>();
+            if (id != null)
+                RemoveFirst(state, n => IsType(n, type) && n["id"]?.GetValue<string>() == id);
+            state.Add(entry);
+        }
+
+        // Append, deduping by instanceId when present (so a re-emit after a crash
+        // updates the same entry rather than duplicating it). The (re-)written entry
+        // lands at the end for last-edited ordering.
+        private static void AppendInstanced(JsonArray state, string type, JsonObject entry)
+        {
+            var instanceId = entry["instanceId"]?.GetValue<string>();
+            if (instanceId != null)
+                RemoveFirst(state, n => IsType(n, type) && n["instanceId"]?.GetValue<string>() == instanceId);
+            state.Add(entry);
+        }
+
+        private static void ReplaceAllOfType(JsonArray state, string type, JsonArray items)
+        {
+            RemoveAllOfType(state, type);
+            foreach (var item in items)
+            {
+                var entry = (JsonObject)item!.DeepClone();
+                entry["$type"] = type;
+                state.Add(entry);
+            }
+        }
+
+        private static void RemoveAllOfType(JsonArray state, string type)
+        {
+            for (var i = state.Count - 1; i >= 0; i--)
+                if (IsType(state[i], type)) state.RemoveAt(i);
+        }
+
+        // The setup singleton, detached from its current slot (or freshly created) and
+        // re-appended at the end — so any edit to it counts as the latest (last-edited
+        // ordering). Returns it ready to mutate in place; it's already back in the array.
+        private static JsonObject SetupForEdit(JsonArray state)
+        {
+            JsonObject setup;
+            for (var i = 0; i < state.Count; i++)
+            {
+                if (IsType(state[i], PlaySession.SetupType))
+                {
+                    setup = (JsonObject)state[i]!;
+                    state.RemoveAt(i);
+                    state.Add(setup);
+                    return setup;
+                }
+            }
+            setup = new JsonObject { ["$type"] = PlaySession.SetupType };
+            state.Add(setup);
+            return setup;
+        }
+
+        // Removes the first entry matching the predicate, if any.
+        private static void RemoveFirst(JsonArray state, Func<JsonObject, bool> match)
+        {
+            for (var i = 0; i < state.Count; i++)
+                if (state[i] is JsonObject obj && match(obj)) { state.RemoveAt(i); return; }
+        }
+
+        // Moves an entry already in the array to the end (no-op if absent or already last).
+        private static void MoveToEnd(JsonArray state, JsonNode node)
+        {
+            var idx = state.IndexOf(node);
+            if (idx >= 0 && idx != state.Count - 1)
+            {
+                state.RemoveAt(idx);
+                state.Add(node);
+            }
+        }
+
+        private static JsonObject? FindKeyed(JsonArray state, string type, string id)
+        {
+            foreach (var node in state)
+                if (IsType(node, type) && node!["id"]?.GetValue<string>() == id)
+                    return (JsonObject)node;
+            return null;
+        }
+
+        private static JsonObject? FindByInstanceId(JsonArray state, string type, string instanceId)
+        {
+            foreach (var node in state)
+                if (IsType(node, type) && node!["instanceId"]?.GetValue<string>() == instanceId)
+                    return (JsonObject)node;
+            return null;
+        }
+
+        private static JsonObject? FindLastOpenStop(JsonArray state, string id)
+        {
+            for (var i = state.Count - 1; i >= 0; i--)
+                if (IsType(state[i], PlaySession.RouteStopType)
+                    && state[i]!["id"]?.GetValue<string>() == id
+                    && !(state[i]!["leftAt"] is JsonNode))
+                    return (JsonObject)state[i]!;
+            return null;
+        }
+
         // Append, or replace the entry whose key value matches (idempotent re-emit).
+        // Used for the setup.modifiers sub-array, which is keyed by id.
         private static void UpsertById(JsonArray array, JsonObject item, string key)
         {
             var id = item[key]?.GetValue<string>();
@@ -161,32 +341,6 @@ namespace ByJP.AtprotoGaming.Core
                 }
             }
             array.Add(item.DeepClone());
-        }
-
-        private static JsonObject? FindByInstanceId(JsonArray array, string instanceId)
-        {
-            foreach (var node in array)
-                if (node is JsonObject obj && obj["instanceId"]?.GetValue<string>() == instanceId)
-                    return obj;
-            return null;
-        }
-
-        private static JsonObject? FindLastOpenStop(JsonArray route, string id)
-        {
-            for (var i = route.Count - 1; i >= 0; i--)
-                if (route[i] is JsonObject stop
-                    && stop["id"]?.GetValue<string>() == id
-                    && !(stop["leftAt"] is JsonNode))
-                    return stop;
-            return null;
-        }
-
-        private static JsonObject Obj(JsonObject parent, string key)
-        {
-            if (parent[key] is JsonObject existing) return existing;
-            var created = new JsonObject();
-            parent[key] = created;
-            return created;
         }
 
         private static JsonArray Arr(JsonObject parent, string key)

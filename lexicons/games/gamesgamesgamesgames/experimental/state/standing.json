@@ -1,0 +1,39 @@
+{
+	"lexicon": 1,
+	"id": "games.gamesgamesgamesgames.experimental.state.standing",
+	"defs": {
+		"main": {
+			"type": "object",
+			"description": "The player's reputation or standing with a faction, guild, or character, for use in a play record's `state` array. At least one of `value` or `tier` should be set. Cardinality: keyed — unique per ($type, id); writers upsert by `id`.",
+			"required": [
+				"id"
+			],
+			"properties": {
+				"id": {
+					"type": "string",
+					"description": "Stable, game-defined identifier for the faction or entity this standing is with. Language-independent and consistent across play-throughs & game versions."
+				},
+				"name": {
+					"type": "string",
+					"description": "Human-readable display name in the locale active at write time. Optional, but recommended so renderers without a localised mapping of `id` can fall back to displaying this."
+				},
+				"value": {
+					"type": "integer",
+					"description": "Numeric standing, when the game tracks one. Higher should mean better standing where possible."
+				},
+				"tier": {
+					"type": "string",
+					"description": "Stable identifier of the named reputation tier, when the game uses them (eg. `honored`, `revered`)."
+				},
+				"extra": {
+					"type": "array",
+					"items": {
+						"type": "union",
+						"description": "Game-specific lexicons that can hold additional information about this standing.",
+						"refs": []
+					}
+				}
+			}
+		}
+	}
+}
