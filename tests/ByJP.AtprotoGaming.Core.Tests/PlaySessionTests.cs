@@ -194,6 +194,31 @@ public class PlaySessionTests
     }
 
     [Fact]
+    public async Task TwoOfflineCommitsToTheSamePlayMergeAndFlush()
+    {
+        using var h = await Harness.OnlineAsync();
+        h.Auth.Set(AuthStatus.Offline, did: FakePds.TestDid);
+        var play = h.OpenPlay(PlayId, Game, StatsSource.Steam);
+
+        var t1 = play.BeginUpdate();
+        t1.SetMetric("score", 100);
+        Assert.Equal(PutStatus.Queued, (await t1.CommitAsync()).Status);
+
+        // Second offline commit for the same play merges into the queued entry —
+        // regression: this used to throw "the node already has a parent".
+        var t2 = play.BeginUpdate();
+        t2.SetMetric("lives", 3);
+        Assert.Equal(PutStatus.Queued, (await t2.CommitAsync()).Status);
+
+        h.Auth.Set(AuthStatus.Ok, did: FakePds.TestDid);
+        await h.PlayWriter.FlushAsync();
+
+        var rec = (JsonObject)h.Pds.Stored(PlaySession.Collection, Rkey)!.Value.value;
+        Assert.Equal(100, Metric(rec, "score"));
+        Assert.Equal(3, Metric(rec, "lives"));
+    }
+
+    [Fact]
     public void AddAcquisitionValidatesIdWhenRecorded()
     {
         using var h = Harness.Offline();

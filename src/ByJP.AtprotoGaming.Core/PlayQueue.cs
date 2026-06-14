@@ -53,7 +53,9 @@ namespace ByJP.AtprotoGaming.Core
             JsonArray merged;
             if (existing != null)
             {
-                merged = existing.Ops;
+                // existing.Ops is still parented to the JsonObject it was parsed from in
+                // Read(); detach it before re-parenting into the new envelope below.
+                merged = (JsonArray)existing.Ops.DeepClone();
                 foreach (var op in ops) merged.Add(op!.DeepClone());
             }
             else
