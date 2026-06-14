@@ -6,8 +6,7 @@ namespace = package id). First (and reference) consumer is the RoR2 mod in the
 sibling repo `../ror2.at` — built to pressure-test this API.
 
 ## Commands
-- Tests: `dotnet test -v quiet -nologo` — **174 tests, all green** (162 core + 12
-  sidecar). Keep them green.
+- Tests: `dotnet test -v quiet -nologo` — keep them all green.
 - Pack: `dotnet pack src/ByJP.AtprotoGaming.Core -o ../packages` (the ror2 mod
   consumes it from that local feed). The sidecar is **not** packed — it ships as a
   standalone exe.

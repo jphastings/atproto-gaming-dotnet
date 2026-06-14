@@ -1,0 +1,59 @@
+name: Release binaries
+
+on:
+  release:
+    types: [published]
+
+# Upload the built binaries as assets on the published release.
+permissions:
+  contents: write
+
+jobs:
+  sidecar:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rid: [linux-x64, linux-arm64, win-x64, osx-x64, osx-arm64]
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
+        with:
+          dotnet-version: 9.0.x
+
+      # Self-contained single file → the player needs no .NET install. No ReadyToRun/AOT,
+      # so every RID cross-publishes from this one Linux runner.
+      - name: Publish ${{ matrix.rid }}
+        run: |
+          dotnet publish src/ByJP.AtprotoGaming.Sidecar/ByJP.AtprotoGaming.Sidecar.csproj \
+            -c Release -r ${{ matrix.rid }} --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:EnableCompressionInSingleFile=true \
+            -p:DebugType=none \
+            -o out
+
+      - name: Package
+        id: package
+        run: |
+          set -euo pipefail
+          rid='${{ matrix.rid }}'
+          name="atproto-gaming-sidecar-${rid}"
+          cd out
+          if [[ "$rid" == win-* ]]; then
+            asset="${name}.zip"
+            zip -j "../${asset}" ByJP.AtprotoGaming.Sidecar.exe
+          else
+            chmod +x ByJP.AtprotoGaming.Sidecar
+            asset="${name}.tar.gz"
+            tar -czf "../${asset}" ByJP.AtprotoGaming.Sidecar
+          fi
+          echo "asset=${asset}" >> "$GITHUB_OUTPUT"
+
+      # gh is preinstalled on the runner and uses the job's GITHUB_TOKEN — no third-party
+      # action to pin. --clobber makes a re-run idempotent.
+      - name: Attach to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" "${{ steps.package.outputs.asset }}" --clobber
