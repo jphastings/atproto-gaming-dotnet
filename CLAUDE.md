@@ -39,6 +39,11 @@ stay in the library, **never** re-implemented at the edge. The wire vocabulary m
 - **`open` doesn't write.** It opens the session + timestamps `OpenedUtc`. `hello`'s
   `client` is required and validated as `name/version`, folded into `versions.additional`
   (alongside the package entry) on the first write.
+- **`plays.list` (read query).** Lists the player's un-ended plays for a `game` (via
+  `listRecords`, paginated) with each rkey + an optional named metric value, newest
+  first — lets a seedless game pick a run to resume. Read-only: needs a DID
+  (`_client.Auth.Did`) but **not** approval; `unavailable` if not signed in / PDS
+  unreachable.
 - **No shared secret — pair-once approval.** `hello` carries a self-chosen `clientId`;
   `commit` is gated by `ApprovalService` (only `commit` is gated — `open`/mutations
   buffer freely). An unknown client's first real commit returns `status:"pending"`

@@ -95,6 +95,7 @@ internal sealed class CommandProcessor
             case "bye": return ProcessResult.Closing(Ok(id));
             case "open": return Open(conn, req, id);
             case "commit": return await CommitAsync(conn, id).ConfigureAwait(false);
+            case "plays.list": return await PlaysListAsync(req, id).ConfigureAwait(false);
             default: return Mutate(conn, req, id, cmd);
         }
     }
@@ -208,6 +209,86 @@ internal sealed class CommandProcessor
         if (result.Uri != null) body["uri"] = result.Uri;
         if (result.Status == PutStatus.Dropped) body["warn"] = "no known DID; record discarded";
         return ProcessResult.Reply(body);
+    }
+
+    /// <summary>
+    /// Lists the player's play records for a game so a seedless game can pick one to
+    /// resume: by default the un-ended ones, each with its rkey, timestamps, and an
+    /// optional named metric value. Read-only — needs a signed-in sidecar but not
+    /// client approval (play records are already public on the PDS).
+    /// </summary>
+    private async Task<ProcessResult> PlaysListAsync(Request req, JsonNode? id)
+    {
+        var did = _client.Auth.Did;
+        if (string.IsNullOrEmpty(did))
+            return ProcessResult.Reply(Error(id, WireProtocol.Errors.Unavailable, "not signed in; can't list plays"));
+
+        var game = req.Str("game");
+        if (!AtUri.IsValid(game))
+            throw new WireException(WireProtocol.Errors.InvalidValue, $"not a valid AT URI: {game}");
+        var metricId = req.OptStr("metric");
+        var includeEnded = req.OptBool("includeEnded", false);
+
+        var found = new List<JsonObject>();
+        try
+        {
+            string? cursor = null;
+            do
+            {
+                var page = await _client.Client.ListRecordsAsync(PlaySession.Collection, cursor, 100).ConfigureAwait(false);
+                if (page?["records"] is JsonArray records)
+                {
+                    foreach (var node in records)
+                    {
+                        if (node is not JsonObject record || record["value"] is not JsonObject value) continue;
+                        if (value["game"]?.GetValue<string>() != game) continue;
+                        var ended = value["endedAt"] is JsonNode || value["outcome"] is JsonNode;
+                        if (ended && !includeEnded) continue;
+
+                        var entry = new JsonObject { ["rkey"] = RkeyOf(record["uri"]!.GetValue<string>()) };
+                        if (value["startedAt"] is JsonNode startedAt) entry["startedAt"] = startedAt.DeepClone();
+                        if (value["updatedAt"] is JsonNode updatedAt) entry["updatedAt"] = updatedAt.DeepClone();
+                        if (ended) entry["ended"] = true;
+                        if (metricId != null && FindMetric(value, metricId) is JsonObject metric)
+                        {
+                            entry["value"] = metric["value"]!.DeepClone();
+                            if (metric["scale"] is JsonNode scale) entry["scale"] = scale.DeepClone();
+                        }
+                        found.Add(entry);
+                    }
+                }
+                cursor = page?["cursor"]?.GetValue<string>();
+            } while (!string.IsNullOrEmpty(cursor));
+        }
+        catch (AtprotoException ex)
+        {
+            return ProcessResult.Reply(Error(id, WireProtocol.Errors.Unavailable, $"couldn't reach the PDS: {ex.Message}"));
+        }
+
+        // Most-recently-updated first — the likeliest resume candidate.
+        found.Sort((a, b) => string.CompareOrdinal(When(b), When(a)));
+        var plays = new JsonArray();
+        foreach (var entry in found) plays.Add(entry);
+
+        var body = Ok(id, ("type", "plays"));
+        body["plays"] = plays;
+        return ProcessResult.Reply(body);
+    }
+
+    private static string When(JsonObject entry) =>
+        entry["updatedAt"]?.GetValue<string>() ?? entry["startedAt"]?.GetValue<string>() ?? "";
+
+    private static string RkeyOf(string uri) => uri.Substring(uri.LastIndexOf('/') + 1);
+
+    private static JsonObject? FindMetric(JsonObject record, string metricId)
+    {
+        if (record["state"] is not JsonArray state) return null;
+        foreach (var node in state)
+            if (node is JsonObject e
+                && e["$type"]?.GetValue<string>() == PlaySession.MetricType
+                && e["id"]?.GetValue<string>() == metricId)
+                return e;
+        return null;
     }
 
     private ProcessResult Mutate(Connection conn, Request req, JsonNode? id, string cmd)

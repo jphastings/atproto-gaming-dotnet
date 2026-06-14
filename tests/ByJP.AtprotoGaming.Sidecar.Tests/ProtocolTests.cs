@@ -281,4 +281,66 @@ public class ProtocolTests
             "{\"cmd\":\"hello\",\"protocol\":1,\"clientId\":\"" + Harness.ClientId + "\",\"client\":\"tests/1.0\",\"id\":42}");
         Assert.Equal("42", r["re"]!.ToJsonString());
     }
+
+    private static JsonObject? PlayByRkey(JsonArray plays, string rkey)
+    {
+        foreach (var p in plays)
+            if (p is JsonObject o && o["rkey"]?.GetValue<string>() == rkey) return o;
+        return null;
+    }
+
+    private static async Task<string> CreatePlayAsync(Harness h, string game, string playId, long score, bool ended)
+    {
+        var rkey = Str(await h.SendAsync(
+            $"{{\"cmd\":\"open\",\"game\":\"{game}\",\"gameVersion\":\"1\",\"source\":\"mgba\",\"playId\":\"{playId}\"}}"), "rkey");
+        await h.SendAsync($"{{\"cmd\":\"metric.set\",\"name\":\"score\",\"value\":{score}}}");
+        if (ended)
+        {
+            await h.SendAsync("{\"cmd\":\"outcome.set\",\"type\":\"succeeded\"}");
+            await h.SendAsync("{\"cmd\":\"finish\",\"endedAt\":\"2026-06-14T12:00:00Z\",\"durationSeconds\":60}");
+        }
+        else
+        {
+            h.Clock.Advance(System.TimeSpan.FromSeconds(16)); // past the initial delay so the commit flushes
+        }
+        await h.SendAsync("{\"cmd\":\"commit\"}");
+        return rkey;
+    }
+
+    [Fact]
+    public async Task Plays_list_returns_unended_plays_for_the_game_with_the_metric()
+    {
+        const string g1 = "at://did:plc:gb/dev.cartridge.game/super-mario-land";
+        const string g2 = "at://did:plc:gb/dev.cartridge.game/tetris";
+        using var h = await Harness.OnlineAsync();
+        await h.HelloAsync();
+        h.Approve();
+
+        var a = await CreatePlayAsync(h, g1, "run-a", 100, ended: false);
+        var b = await CreatePlayAsync(h, g1, "run-b", 250, ended: false);
+        await CreatePlayAsync(h, g1, "run-c", 50, ended: true);   // ended → excluded
+        await CreatePlayAsync(h, g2, "run-d", 999, ended: false); // other game → excluded
+
+        var resp = await h.SendAsync($"{{\"cmd\":\"plays.list\",\"game\":\"{g1}\",\"metric\":\"score\"}}");
+        Assert.True(Ok(resp));
+        Assert.Equal("plays", Str(resp, "type"));
+        var plays = (JsonArray)resp["plays"]!;
+
+        Assert.Equal(2, plays.Count);
+        Assert.Equal("100", PlayByRkey(plays, a)!["value"]!.ToJsonString());
+        Assert.Equal("250", PlayByRkey(plays, b)!["value"]!.ToJsonString());
+        Assert.Null(PlayByRkey(plays, "run-c"));
+        Assert.Null(PlayByRkey(plays, "run-d"));
+    }
+
+    [Fact]
+    public async Task Plays_list_without_sign_in_is_unavailable()
+    {
+        using var h = await Harness.UnconfiguredAsync();
+        await h.HelloAsync();
+        var resp = await h.SendAsync(
+            "{\"cmd\":\"plays.list\",\"game\":\"at://did:plc:gb/dev.cartridge.game/super-mario-land\"}");
+        Assert.False(Ok(resp));
+        Assert.Equal("unavailable", Error(resp));
+    }
 }

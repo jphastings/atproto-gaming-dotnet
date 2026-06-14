@@ -81,7 +81,21 @@ internal sealed class FakePds : HttpMessageHandler
             }
 
             case "com.atproto.repo.listRecords":
-                return Ok(new JsonObject { ["records"] = new JsonArray() });
+            {
+                var c = Query(request, "collection");
+                var records = new JsonArray();
+                foreach (var kv in _store)
+                {
+                    var slash = kv.Key.IndexOf('/');
+                    if (kv.Key.Substring(0, slash) != c) continue;
+                    var r = kv.Key.Substring(slash + 1);
+                    records.Add(new JsonObject
+                    {
+                        ["uri"] = $"at://{TestDid}/{c}/{r}", ["cid"] = kv.Value.cid, ["value"] = kv.Value.value.DeepClone(),
+                    });
+                }
+                return Ok(new JsonObject { ["records"] = records });
+            }
 
             default:
                 return Err(404, "MethodNotImplemented", nsid);
@@ -142,7 +156,12 @@ internal sealed class Harness : IDisposable
         _processor = new CommandProcessor(client, approvals, clock, InitialDelay, PublishInterval, signing: false, NullLogSink.Instance);
     }
 
-    public static async Task<Harness> OnlineAsync()
+    public static Task<Harness> OnlineAsync() => BuildAsync(signedIn: true);
+
+    /// <summary>A sidecar that never signed in (no DID) — for read commands that need one.</summary>
+    public static Task<Harness> UnconfiguredAsync() => BuildAsync(signedIn: false);
+
+    private static async Task<Harness> BuildAsync(bool signedIn)
     {
         var dir = Path.Combine(Path.GetTempPath(), "sidecar-test-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
@@ -154,8 +173,11 @@ internal sealed class Harness : IDisposable
         {
             FileSystem = fs, Log = NullLogSink.Instance, Config = configStore, HttpClient = http,
         });
-        await client.Client.LoginAsync(FakePds.BaseUrl, "test.bsky.social", "pw");
-        client.Auth.Set(AuthStatus.Ok, handle: "test.bsky.social", did: FakePds.TestDid, pds: FakePds.BaseUrl);
+        if (signedIn)
+        {
+            await client.Client.LoginAsync(FakePds.BaseUrl, "test.bsky.social", "pw");
+            client.Auth.Set(AuthStatus.Ok, handle: "test.bsky.social", did: FakePds.TestDid, pds: FakePds.BaseUrl);
+        }
         var approvals = new ApprovalService(configStore, SystemClock.Instance, NullLogSink.Instance);
         return new Harness(dir, http, pds, client, approvals, new TestClock());
     }

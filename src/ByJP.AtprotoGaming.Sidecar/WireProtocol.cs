@@ -14,6 +14,7 @@ internal static class WireProtocol
         public const string MissingField = "missingField";
         public const string InvalidValue = "invalidValue";
         public const string NoSession = "noSession";
+        public const string Unavailable = "unavailable";
         public const string Internal = "internal";
     }
 }

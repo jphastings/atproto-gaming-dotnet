@@ -62,6 +62,15 @@ internal sealed class Request
 
     public int? OptInt(string field) => Has(field) ? Int(field) : null;
 
+    public bool OptBool(string field, bool fallback)
+    {
+        if (!Has(field)) return fallback;
+        var v = _obj[field];
+        if (v is not JsonValue val || (val.GetValueKind() != JsonValueKind.True && val.GetValueKind() != JsonValueKind.False))
+            throw new WireException(WireProtocol.Errors.InvalidValue, $"field '{field}' must be a boolean");
+        return val.GetValue<bool>();
+    }
+
     public JsonObject Obj(string field)
     {
         if (!_obj.TryGetPropertyValue(field, out var v) || v is null)

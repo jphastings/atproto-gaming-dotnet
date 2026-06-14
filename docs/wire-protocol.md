@@ -239,6 +239,38 @@ discoveries, standings, party members, …) and which op writes each.
 | `ping` | `{"ok":true,"type":"pong"}` | liveness check; valid any time after `hello` |
 | `bye` | `{"ok":true}` then close | graceful disconnect (does **not** commit) |
 
+### 5.5 Queries — `plays.list`
+
+Lists the player's play records for a game, so a game **without seeds or save IDs** can
+show its in-progress runs and let the player pick one to resume. Read-only: it needs the
+sidecar to be signed in, but **not** client approval (play records are already public on
+the PDS). Independent of `open` — issue it any time after `hello`.
+
+```json
+{"cmd":"plays.list","game":"at://did:plc:…/dev.cartridge.game/super-mario-land","metric":"score"}
+```
+
+| field | required | meaning |
+|---|---|---|
+| `game` | yes | the game's AT-URI (as in `open`) — only this game's plays are returned |
+| `metric` | no | a metric `id` (e.g. `score`) to project for each play |
+| `includeEnded` | no | include finished plays too (default `false` → un-ended only) |
+
+```json
+{"ok":true,"type":"plays","plays":[
+  {"rkey":"3ku7a…","startedAt":"…","updatedAt":"…","value":904002},
+  {"rkey":"9f2b…","startedAt":"…","updatedAt":"…","value":12500}
+]}
+```
+
+- Returns the un-ended plays (no `endedAt` and no `outcome`) for `game`,
+  **most-recently-updated first** — pass a returned `rkey` straight back to `open` as
+  `playId` to resume it.
+- `value` (and `scale` for fixed-point — real value = `value`/10^`scale`) appear only when
+  `metric` was given and the play carries that metric.
+- With `includeEnded:true`, finished plays are included too and each carries `"ended":true`.
+- `error:"unavailable"` if the sidecar isn't signed in (no DID known) or can't reach the PDS.
+
 ## 6. Error codes
 
 `ok:false` always carries an `error` code and a `message`. The connection stays open
@@ -252,6 +284,7 @@ for everything except handshake failures.
 | `missingField` | a required field is absent or the wrong JSON type |
 | `invalidValue` | a field is present but invalid (e.g. array setting value, bad AT-URI, unknown `op`) |
 | `noSession` | a mutation/`commit`/`finish` arrived with no active play (no `open`) |
+| `unavailable` | a read command (e.g. `plays.list`) couldn't be served — sidecar not signed in, or the PDS is unreachable |
 | `internal` | the sidecar hit an unexpected error (details in `message`) |
 
 A bad mutating command is rejected (`ok:false`) **without** discarding the buffer or
