@@ -229,6 +229,9 @@ Conventions:
   key still succeeds but the reply carries a `warn` (the runtime counterpart of the
   library's BAG001 analyzer).
 
+See **§10** for the full catalogue of default `state[]` types (objectives, unlocks,
+discoveries, standings, party members, …) and which op writes each.
+
 ### 5.4 Utility
 
 | `cmd` | reply | meaning |
@@ -312,7 +315,7 @@ the session — fix it and continue.
 ← {"ok":true,"type":"committed","status":"published","uri":"at://…"}
 
 // …lives hit zero…
-→ {"cmd":"outcome.set","type":"death","cause":"fell"}
+→ {"cmd":"outcome.set","type":"failed","cause":"fell"}
 ← {"ok":true}
 → {"cmd":"finish","endedAt":"2026-06-14T12:18:42Z","durationSeconds":1122}
 ← {"ok":true}
@@ -343,5 +346,66 @@ the session — fix it and continue.
    preserved (rate-limit window, or awaiting approval), and a later commit publishes it.
 7. On run end: `outcome.set`, `finish`, `commit`, then `bye`.
 8. Read each reply; surface `approval`, `auth`, and any `warn`/`error` to the player.
+
+## 10. Default state types & operations (reference)
+
+A play record's `state[]` is an **open union** of typed entries. The library ships the
+default entry types below — lexicons under `games.gamesgamesgamesgames.experimental.state.`
+(the tables show the suffix after that prefix). **Cardinality is implied by an entry's
+shape** and decides how a write merges:
+
+- **singleton** (declares neither `id` nor `instanceId`) — one entry per `$type`, replaced wholesale.
+- **keyed** (declares `id` only) — one entry per (`$type`, `id`), upserted by `id`.
+- **instanced** (declares `id` + `instanceId`) — appended in order, deduped by `instanceId`.
+
+Types with a **typed command** are written directly. The rest use a **generic op**
+(`state.replace` / `state.upsert` / `state.append`) — pass the full NSID as `type` and the
+entry's fields as `entry`; the sidecar stamps `$type`, so don't put it in `entry`:
+
+```json
+{"cmd":"state.upsert","type":"games.gamesgamesgamesgames.experimental.state.objective",
+ "entry":{"id":"clearWorld1","status":"completed","current":3,"target":3}}
+```
+
+Common to all keyed/instanced entries: a stable camelCase **`id`**, an optional display
+**`name`**, and an optional **`extra`** array of game-specific sub-objects (rarely needed).
+All timestamps are ISO-8601 UTC.
+
+### Keyed — upsert by `id`
+
+| type (`…state.`) | command(s) | required (besides `id`) | other fields |
+|---|---|---|---|
+| `metric` | `metric.set` / `metric.update` | `value` (int) | `name`; `scale` (int ≥0 — real value = `value`/10^`scale`); `unit`; `kind` ∈ `count`·`currency`·`score`·`level` |
+| `setting` | `setting.set` | one of `value`/`intValue`/`boolValue`/`dataValue` (object) | `name` |
+| `objective` | `state.upsert` | `status` ∈ `offered`·`active`·`completed`·`failed`·`abandoned` | `name`; `current`, `target` (int); `acceptedAt`, `resolvedAt` |
+| `unlock` | `state.upsert` | — | `kind`; `name`; `unlockedAt` |
+| `discovery` | `state.upsert` | — | `kind`; `name`; `discoveredAt` |
+| `standing` | `state.upsert` | `value` or `tier` | `name`; `value` (int); `tier` |
+
+### Instanced — append, dedupe by `instanceId`
+
+| type (`…state.`) | command(s) | fields (besides `id`) |
+|---|---|---|
+| `acquisition` | `acquisition.add` (one) / `acquisition.set` (replace all) | `kind`; `name`; `via` ∈ `starting`·`pickup`·`purchased`·`crafted`·`reward`·`metaUnlock`; `useCount` (int); `addedAt`, `lostAt`; `instanceId` |
+| `routeStop` | `route.arrive` / `route.leave` | `name`; `seq` (int); `arrivedAt`, `leftAt`; `instanceId` |
+| `partyMember` | `state.append` | `name`; `role`; `level` (int); `equipment` (string[] of item ids); `joinedAt`, `leftAt`; `instanceId` |
+
+### Singleton — replace the lone entry
+
+| type (`…state.`) | command(s) | fields |
+|---|---|---|
+| `setup` | `setup.set` (`mode`, `seed`, `character`, `difficulty` (int) — merges named fields) · `setup.modifier` (`id`, `name?`, `value?` — modifiers deduped by `id`) | as listed |
+
+### Top-level record fields (not in `state[]`)
+
+| field | command | shape |
+|---|---|---|
+| `outcome` | `outcome.set` | `type` ∈ `failed`·`abandoned`·`succeeded` (free text allowed); `cause` (game-specific, e.g. the boss's id) |
+| `participants` | `participants.set` | array of `{atproto`(DID)`, steam`(SteamID64 decimal string)`}` — at least one of the two per entry |
+| `endedAt` + `duration` | `finish` | `endedAt` (ISO), `durationSeconds` (int) |
+
+**Game-specific types:** mint your own `$type` and write it with the generic op whose
+cardinality matches your lexicon's shape — declares `id`+`instanceId` → `state.append`;
+`id` only → `state.upsert`; neither → `state.replace`.
 </content>
 </invoke>
