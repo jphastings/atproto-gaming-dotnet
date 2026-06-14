@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- A modern host that consumes the netstandard2.0 core library. Not packed as
+         a NuGet library; shipped as a standalone executable for constrained emitters
+         (mGBA Lua, retro homebrew) that can't speak TLS + XRPC themselves. -->
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>ByJP.AtprotoGaming.Sidecar</AssemblyName>
+    <RootNamespace>ByJP.AtprotoGaming.Sidecar</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ByJP.AtprotoGaming.Core\ByJP.AtprotoGaming.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ByJP.AtprotoGaming.Sidecar.Tests" />
+  </ItemGroup>
+
+</Project>

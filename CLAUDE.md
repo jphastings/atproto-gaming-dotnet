@@ -6,9 +6,11 @@ namespace = package id). First (and reference) consumer is the RoR2 mod in the
 sibling repo `../ror2.at` — built to pressure-test this API.
 
 ## Commands
-- Tests: `dotnet test -v quiet -nologo` — **160 tests, all green**. Keep them green.
+- Tests: `dotnet test -v quiet -nologo` — **174 tests, all green** (162 core + 12
+  sidecar). Keep them green.
 - Pack: `dotnet pack src/ByJP.AtprotoGaming.Core -o ../packages` (the ror2 mod
-  consumes it from that local feed).
+  consumes it from that local feed). The sidecar is **not** packed — it ships as a
+  standalone exe.
 - The ror2 mod's engine-free layer is compile-checked against this package at
   `/tmp/mapcheck` (`dotnet build` there) — see `../ror2.at/CLAUDE.md`.
 
@@ -22,6 +24,43 @@ sibling repo `../ror2.at` — built to pressure-test this API.
   `Outbox`, optimistic locking via `swapRecord`/`WriteResult{uri,cid}`.
 - **Layer 2 — play records:** `PlaySession`/`PlayUpdate`/`PlayWriter`/`PlayOps`/
   `PlayQueue`/`StatsResolver`/`RollingStats`. This is the ergonomic surface.
+
+## The sidecar (`src/ByJP.AtprotoGaming.Sidecar`, net9.0 exe)
+A standalone host for **constrained emitters that can't speak TLS+XRPC** themselves
+(mGBA Lua, retro homebrew, microcontrollers). It exposes a tiny line protocol over
+loopback TCP; an emitter sends play **intents** and the sidecar compiles each into a
+`PlayUpdate` call — so the replay-safe op construction, CAS, outbox and signing all
+stay in the library, **never** re-implemented at the edge. The wire vocabulary mirrors
+`PlayUpdate` 1:1; spec + the worked Super Mario Land transcript are in
+[`docs/wire-protocol.md`](docs/wire-protocol.md) (the contract for emitter authors).
+- `CommandProcessor` is the transport-agnostic router (request `JsonObject` → reply +
+  `CloseAfter`); `WireServer` only frames NDJSON over a loopback socket; `Program`
+  boots config→credential-setup→listen. `SidecarConfig : CoreConfig` adds `port` +
+  `approvedClients` + optional signing key.
+- **`open` doesn't write.** It opens the session + timestamps `OpenedUtc`. `hello`'s
+  `client` is required and validated as `name/version`, folded into `versions.additional`
+  (alongside the package entry) on the first write.
+- **No shared secret — pair-once approval.** `hello` carries a self-chosen `clientId`;
+  `commit` is gated by `ApprovalService` (only `commit` is gated — `open`/mutations
+  buffer freely). An unknown client's first real commit returns `status:"pending"`
+  **keeping the buffer**, and raises a one-time terminal y/n prompt; on yes the
+  `clientId` is persisted to `approvedClients` (revocable) and a retried commit
+  publishes. Non-interactive (no TTY) → stays pending.
+- **`TerminalSetup` replaces hand-editing config:** prompts for handle/app-password
+  (masked) when missing or rejected, verifies by logging in, re-prompts on failure;
+  falls back to unconfigured when there's no TTY.
+- **Publish throttle (two stages, both off the injected `IClock` per `commit` — no timer
+  thread, deterministic under test):** the **first** write is held back by
+  `initialPublishDelaySeconds` (default 15) measured from `OpenedUtc`, so the opening
+  setup batches into one record; **later** writes are ≤1 per `publishIntervalSeconds`
+  (default 60). Deferred commits return `status:"deferred"` and **keep accumulating into
+  the same replay-safe `PlayUpdate` buffer** (one flush applies them all). An
+  `outcome.set`/`finish` (`Connection.PendingTerminal`) flushes immediately, bypassing
+  both stages.
+- **Validation is the runtime counterpart of the analyzer:** non-camelCase keys
+  `warn` (BAG001's Info severity), array setting values hard-error (`invalidValue`),
+  matching the library's own throw. First (reference) emitter: `supermarioland-atproto.lua`
+  in a sibling repo, written against the spec.
 
 ## ⚠️ The load-bearing invariant: ops must be REPLAY-SAFE
 `PlayUpdate` records changes as **serializable JSON ops** (not mutations). `PlayOps.Apply`
